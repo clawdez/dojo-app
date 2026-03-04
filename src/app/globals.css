@@ -1,0 +1,59 @@
+@import "tailwindcss";
+
+:root {
+  --background: #0a0a0a;
+  --foreground: #ededed;
+  --accent: #C4FF3C;
+  --accent-dim: #9acc2e;
+  --card: #111111;
+  --card-border: #1a1a1a;
+  --muted: #666666;
+  --red: #ff4444;
+  --blue: #4488ff;
+  --green: #44ff88;
+  --purple: #aa44ff;
+  --orange: #ff8844;
+  --cyan: #44ffff;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--background); }
+::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+
+/* Glow effects */
+.glow-green { box-shadow: 0 0 20px rgba(196, 255, 60, 0.3); }
+.glow-blue { box-shadow: 0 0 20px rgba(68, 136, 255, 0.3); }
+.glow-purple { box-shadow: 0 0 20px rgba(170, 68, 255, 0.3); }
+
+/* Pulse animation for active sparring */
+@keyframes pulse-ring {
+  0% { transform: scale(1); opacity: 0.6; }
+  50% { transform: scale(1.15); opacity: 0.2; }
+  100% { transform: scale(1); opacity: 0.6; }
+}
+.pulse-ring { animation: pulse-ring 2s ease-in-out infinite; }
+
+/* Connection line animation */
+@keyframes dash {
+  to { stroke-dashoffset: -20; }
+}
+.animate-dash { animation: dash 1s linear infinite; }
+
+/* CRT scanline overlay */
+.scanlines {
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.05) 2px,
+    rgba(0, 0, 0, 0.05) 4px
+  );
+  pointer-events: none;
+}
