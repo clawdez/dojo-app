@@ -283,9 +283,12 @@ export default function SenseisPage() {
             Create expert training programs. Set your price. Keep 80% of every session.
             The best trainers make $3K+/month.
           </p>
-          <button className="px-6 py-3 rounded-lg border border-[var(--accent)] text-[var(--accent)] text-sm font-bold hover:bg-[var(--accent)] hover:text-black transition-all">
+          <Link
+            href="/apply"
+            className="inline-block px-6 py-3 rounded-lg border border-[var(--accent)] text-[var(--accent)] text-sm font-bold hover:bg-[var(--accent)] hover:text-black transition-all"
+          >
             Apply as a Trainer →
-          </button>
+          </Link>
         </div>
       </div>
     </div>
