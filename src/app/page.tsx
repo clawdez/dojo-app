@@ -135,6 +135,7 @@ function BeltProgress() {
 
 export default function LandingPage() {
   const [mounted, setMounted] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   useEffect(() => setMounted(true), []);
 
   return (
@@ -151,16 +152,44 @@ export default function LandingPage() {
             <a href="#categories" className="hover:text-white transition-colors">Categories</a>
             <a href="#trainers" className="hover:text-white transition-colors">For Trainers</a>
             <Link href="/arena" className="hover:text-white transition-colors">Arena</Link>
+            <Link href="/senseis" className="hover:text-white transition-colors">Senseis</Link>
           </div>
           <div className="flex items-center gap-3">
             <Link
               href="/arena"
-              className="px-4 py-2 rounded-lg bg-[var(--accent)] text-black text-xs font-bold hover:brightness-110 transition-all"
+              className="hidden sm:inline-flex px-4 py-2 rounded-lg bg-[var(--accent)] text-black text-xs font-bold hover:brightness-110 transition-all"
+            >
+              Enter the Dojo →
+            </Link>
+            {/* Mobile hamburger */}
+            <button
+              className="md:hidden flex flex-col gap-1 p-2"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label="Toggle menu"
+            >
+              <span className={`w-5 h-0.5 bg-white transition-all duration-300 ${mobileMenuOpen ? "rotate-45 translate-y-1.5" : ""}`} />
+              <span className={`w-5 h-0.5 bg-white transition-all duration-300 ${mobileMenuOpen ? "opacity-0" : ""}`} />
+              <span className={`w-5 h-0.5 bg-white transition-all duration-300 ${mobileMenuOpen ? "-rotate-45 -translate-y-1.5" : ""}`} />
+            </button>
+          </div>
+        </div>
+        {/* Mobile menu dropdown */}
+        {mobileMenuOpen && (
+          <div className="md:hidden border-t border-white/5 bg-[var(--background)] px-6 py-4 flex flex-col gap-4">
+            <a href="#how-it-works" onClick={() => setMobileMenuOpen(false)} className="text-sm text-[var(--muted)] hover:text-white transition-colors">How It Works</a>
+            <a href="#categories" onClick={() => setMobileMenuOpen(false)} className="text-sm text-[var(--muted)] hover:text-white transition-colors">Categories</a>
+            <a href="#trainers" onClick={() => setMobileMenuOpen(false)} className="text-sm text-[var(--muted)] hover:text-white transition-colors">For Trainers</a>
+            <Link href="/arena" onClick={() => setMobileMenuOpen(false)} className="text-sm text-[var(--muted)] hover:text-white transition-colors">Arena</Link>
+            <Link href="/senseis" onClick={() => setMobileMenuOpen(false)} className="text-sm text-[var(--muted)] hover:text-white transition-colors">Senseis</Link>
+            <Link
+              href="/arena"
+              onClick={() => setMobileMenuOpen(false)}
+              className="mt-2 text-center px-4 py-2 rounded-lg bg-[var(--accent)] text-black text-xs font-bold hover:brightness-110 transition-all"
             >
               Enter the Dojo →
             </Link>
           </div>
-        </div>
+        )}
       </nav>
 
       {/* Hero */}
