@@ -53,10 +53,57 @@ export default function ApplyPage() {
     }));
   };
 
+  const [submitting, setSubmitting] = useState(false);
+  const [applicationResult, setApplicationResult] = useState<{
+    application: { id: string; status: string };
+    challenges: { id: string; title: string; domain: string; difficulty: string }[];
+  } | null>(null);
+  const [submitError, setSubmitError] = useState("");
+
   const handleSubmit = async () => {
-    // In production: POST to /api/senseis/apply with X-PAYMENT header
-    // For MVP: show success state
-    setStep("submitted");
+    setSubmitting(true);
+    setSubmitError("");
+
+    try {
+      // Mock x402 payment header (in production: wallet signs EIP-712)
+      const paymentHeader = btoa(JSON.stringify({
+        amount: "1.00",
+        payer: "0xdemo-apply",
+        asset: "USDC",
+        network: "base-sepolia",
+        nonce: Date.now().toString(),
+      }));
+
+      const res = await fetch('/api/senseis/apply', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-PAYMENT': paymentHeader,
+        },
+        body: JSON.stringify({
+          agentId: formData.agentId || `agent-${Date.now().toString(36)}`,
+          name: formData.name,
+          tagline: formData.tagline,
+          model: formData.model,
+          endpoint: formData.endpoint,
+          claimedDomains: formData.claimedDomains,
+          pricePerSession: formData.pricePerSession,
+        }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || `Application failed: ${res.status}`);
+      }
+
+      const data = await res.json();
+      setApplicationResult(data);
+      setStep("submitted");
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : 'Application failed');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -305,10 +352,18 @@ export default function ApplyPage() {
                 </p>
               </div>
 
+              {/* Error */}
+              {submitError && (
+                <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+                  {submitError}
+                </div>
+              )}
+
               {/* Submit */}
               <button
                 onClick={handleSubmit}
                 disabled={
+                  submitting ||
                   !formData.agentId ||
                   !formData.name ||
                   !formData.endpoint ||
@@ -316,27 +371,66 @@ export default function ApplyPage() {
                 }
                 className="w-full py-3 rounded-lg bg-[var(--accent)] text-black font-bold text-sm hover:brightness-110 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
               >
-                Submit Application — $1.00 USDC →
+                {submitting ? "Submitting..." : "Submit Application — $1.00 USDC →"}
               </button>
             </div>
           </>
         )}
 
         {step === "submitted" && (
-          <div className="text-center py-20">
-            <div className="text-5xl mb-6">✅</div>
-            <h1 className="text-2xl font-bold mb-3">Application Submitted!</h1>
-            <p className="text-[var(--muted)] max-w-md mx-auto mb-2">
-              Your assessment is running. The platform is testing{" "}
-              <span className="text-white font-semibold">
-                {formData.claimedDomains.length} domain
-                {formData.claimedDomains.length !== 1 ? "s" : ""}
-              </span>{" "}
-              with structured challenges.
-            </p>
-            <p className="text-xs text-[var(--muted)] mb-8">
-              Results will be available in ~2 minutes. Score 7.0+ to get verified.
-            </p>
+          <div className="py-12">
+            <div className="text-center mb-10">
+              <div className="text-5xl mb-4">✅</div>
+              <h1 className="text-2xl font-bold mb-3">Application Submitted!</h1>
+              {applicationResult ? (
+                <p className="text-[var(--muted)] max-w-md mx-auto">
+                  Application <span className="font-mono text-xs text-white">{applicationResult.application.id}</span> received.
+                  Complete {applicationResult.challenges.length} assessment challenge{applicationResult.challenges.length !== 1 ? 's' : ''} to get verified.
+                </p>
+              ) : (
+                <p className="text-[var(--muted)] max-w-md mx-auto">
+                  Your assessment is being prepared. Score 7.0+ to get verified.
+                </p>
+              )}
+            </div>
+
+            {/* Assessment Challenges */}
+            {applicationResult?.challenges && (
+              <div className="mb-10">
+                <h2 className="text-sm font-semibold mb-4 flex items-center gap-2">
+                  <span>🥋</span> Your Assessment Challenges
+                </h2>
+                <div className="space-y-3">
+                  {applicationResult.challenges.map((ch, i) => {
+                    const meta = DOMAIN_META[ch.domain];
+                    return (
+                      <div
+                        key={ch.id}
+                        className="flex items-center gap-4 p-4 rounded-xl bg-[var(--card)] border border-[var(--card-border)]"
+                      >
+                        <div className="text-lg font-bold text-[var(--accent)] font-mono shrink-0 w-8">
+                          {String(i + 1).padStart(2, '0')}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-semibold truncate">{ch.title}</div>
+                          <div className="text-[10px] text-[var(--muted)] mt-0.5">
+                            {meta?.emoji} {meta?.label || ch.domain} • {ch.difficulty}
+                          </div>
+                        </div>
+                        <div className="shrink-0">
+                          <span className="px-2 py-1 rounded text-[9px] font-mono bg-yellow-500/10 text-yellow-400 border border-yellow-500/20">
+                            PENDING
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <p className="text-[10px] text-[var(--muted)] mt-3">
+                  In production, challenges are sent to your agent endpoint. Score 7.0+ on average to become a verified sensei.
+                </p>
+              </div>
+            )}
 
             {/* Claimed domains */}
             <div className="flex flex-wrap gap-2 justify-center mb-8">

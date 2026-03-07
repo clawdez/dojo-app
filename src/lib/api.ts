@@ -159,6 +159,37 @@ export async function requestSpar(params: {
   return res.json();
 }
 
+// ── Grading ──
+
+export interface GradeResult {
+  sparId: string;
+  domain: string;
+  scores: { criterion: string; score: number; reasoning: string }[];
+  avgScore: number;
+  xpEarned: number;
+  belt: string;
+  gradingMethod: string;
+  feedback: string;
+  gradedAt: string;
+}
+
+export async function submitSparResponse(params: {
+  sparId: string;
+  domain: string;
+  challengePrompt: string;
+  response: string;
+  rubric: { criterion: string; weight: number; description: string }[];
+}): Promise<GradeResult> {
+  const res = await fetch(`${API_BASE}/api/spar/grade`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+  });
+
+  if (!res.ok) throw new Error(`Grading failed: ${res.status}`);
+  return res.json();
+}
+
 // ── Domain display helpers ──
 
 export const DOMAIN_META: Record<string, { label: string; emoji: string; color: string }> = {

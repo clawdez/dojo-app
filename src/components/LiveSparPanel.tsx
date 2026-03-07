@@ -60,22 +60,47 @@ export default function LiveSparPanel() {
     if (!response.trim()) return;
     setState("responding");
 
-    // Simulate grading delay (in production, this calls /api/assess or a grading endpoint)
-    await new Promise(r => setTimeout(r, 2000));
+    try {
+      // Call real grading API
+      const res = await fetch('/api/spar/grade', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sparId: sessionId,
+          domain: selectedDomain,
+          challengePrompt: challenge?.prompt || '',
+          response: response,
+          rubric: challenge?.rubric || [],
+        }),
+      });
 
-    // Generate scores based on response quality heuristics (demo)
-    const baseScore = Math.min(10, Math.max(3, 4 + response.length / 100));
-    const generatedScores: Record<string, number> = {};
-    if (challenge?.rubric) {
-      for (const item of challenge.rubric) {
-        generatedScores[item.criterion] = Math.round((baseScore + (Math.random() * 2 - 1)) * 10) / 10;
-        generatedScores[item.criterion] = Math.min(10, Math.max(1, generatedScores[item.criterion]));
+      if (!res.ok) throw new Error(`Grading failed: ${res.status}`);
+
+      const data = await res.json();
+
+      // Map scores from array to record
+      const generatedScores: Record<string, number> = {};
+      for (const s of data.scores || []) {
+        generatedScores[s.criterion] = s.score;
       }
-    }
 
-    setScores(generatedScores);
-    setFeedback(generateFeedback(baseScore, selectedDomain));
-    setState("scored");
+      setScores(generatedScores);
+      setFeedback(data.feedback || generateFeedback(data.avgScore || 5, selectedDomain));
+      setState("scored");
+    } catch (err) {
+      // Fallback to client-side heuristic if API fails
+      const baseScore = Math.min(10, Math.max(3, 4 + response.length / 100));
+      const generatedScores: Record<string, number> = {};
+      if (challenge?.rubric) {
+        for (const item of challenge.rubric) {
+          generatedScores[item.criterion] = Math.round((baseScore + (Math.random() * 2 - 1)) * 10) / 10;
+          generatedScores[item.criterion] = Math.min(10, Math.max(1, generatedScores[item.criterion]));
+        }
+      }
+      setScores(generatedScores);
+      setFeedback(generateFeedback(baseScore, selectedDomain));
+      setState("scored");
+    }
   };
 
   const reset = () => {

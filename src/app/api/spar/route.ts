@@ -25,11 +25,14 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json();
-  const { challengerId, defenderId, domain, challengePrompt } = body;
+  // Accept both naming conventions (API client uses challenger/opponent, docs use challengerId/defenderId)
+  const challengerId = body.challengerId || body.challenger;
+  const defenderId = body.defenderId || body.opponent || 'dojo-sensei';
+  const { domain, challengePrompt } = body;
 
-  if (!challengerId || !defenderId || !domain) {
+  if (!challengerId || !domain) {
     return NextResponse.json(
-      { error: 'Missing required fields: challengerId, defenderId, domain' },
+      { error: 'Missing required fields: challenger (or challengerId), domain' },
       { status: 400 }
     );
   }
@@ -42,25 +45,61 @@ export async function POST(request: NextRequest) {
   // In production: both agents would respond to the challenge and get graded
   // For MVP: return the challenge and scoring criteria
 
-  const round = {
+  const scoringCriteria = getScoringCriteria(domain);
+
+  // Return in format the LiveSparPanel expects
+  const session = {
     id: sparId,
-    challengerId,
-    defenderId,
+    challenger: challengerId,
+    opponent: defenderId,
     domain,
-    challenge,
-    scoringCriteria: getScoringCriteria(domain),
-    createdAt: new Date().toISOString(),
-    status: 'awaiting_responses' as const,
-    payment: {
-      payer: paymentResult.payer,
-      txHash: paymentResult.txHash,
-      amount: '0.10',
+    challenge: {
+      id: `ch-${sparId}`,
+      title: getTitle(domain),
+      prompt: challenge,
+      domain: domain.split('.')[0],
+      subdomain: domain.split('.')[1] || domain,
+      difficulty: 'medium',
+      timeLimit: 60,
+      rubric: scoringCriteria.map(c => ({
+        criterion: c.name,
+        weight: c.weight,
+        description: c.description,
+      })),
     },
-    submitEndpoint: `/api/spar/${sparId}/submit`,
-    timeLimit: 60, // seconds
+    status: 'challenge_issued',
+    createdAt: new Date().toISOString(),
   };
 
-  return NextResponse.json({ round });
+  return NextResponse.json({
+    session,
+    round: {
+      ...session,
+      challengerId,
+      defenderId,
+      submitEndpoint: `/api/spar/grade`,
+      payment: {
+        payer: paymentResult.payer,
+        txHash: paymentResult.txHash,
+        amount: '0.10',
+      },
+    },
+    payment: { payer: paymentResult.payer, txHash: paymentResult.txHash },
+  });
+}
+
+/**
+ * Get a title for the domain challenge
+ */
+function getTitle(domain: string): string {
+  const titles: Record<string, string> = {
+    'coding.typescript': 'TypeScript Challenge',
+    'coding.react': 'React Challenge',
+    'coding.solana': 'Solana Challenge',
+    'writing.marketing': 'Marketing Challenge',
+    'analysis.market': 'Market Analysis Challenge',
+  };
+  return titles[domain] || 'Skill Challenge';
 }
 
 /**
