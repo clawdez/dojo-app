@@ -29,13 +29,13 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Try LLM grading first, fall back to advanced heuristic
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  // Try LLM grading first (supports multiple free providers), fall back to advanced heuristic
+  const llmProvider = getLLMProvider();
   let result;
 
-  if (apiKey) {
+  if (llmProvider) {
     try {
-      const llmScores = await gradeLLM(challengePrompt, response, rubric, apiKey);
+      const llmScores = await gradeLLMMultiProvider(challengePrompt, response, rubric, llmProvider);
       const avgScore = llmScores.length > 0
         ? Math.round((llmScores.reduce((a, b) => a + b.score, 0) / llmScores.length) * 10) / 10
         : 0;
@@ -43,13 +43,13 @@ export async function POST(request: NextRequest) {
       result = {
         sparId,
         domain,
-        scores: llmScores.map(s => ({ ...s, confidence: 0.9, signals: ['llm-evaluated'] })),
+        scores: llmScores.map(s => ({ ...s, confidence: 0.85, signals: [`${llmProvider.name}-evaluated`] })),
         avgScore,
         xpEarned: Math.round(avgScore * 15),
         belt: getBelt(avgScore),
-        gradingMethod: 'llm-judge' as const,
+        gradingMethod: `llm-judge (${llmProvider.name})` as string,
         feedback: generateFeedback(avgScore, domain),
-        analysisDepth: null, // LLM doesn't provide structural analysis
+        analysisDepth: null,
         gradedAt: new Date().toISOString(),
       };
     } catch {
@@ -80,49 +80,151 @@ export async function POST(request: NextRequest) {
   return NextResponse.json(result);
 }
 
-async function gradeLLM(
+// ── Multi-provider LLM support (prioritizes free tiers) ──
+
+interface LLMProvider {
+  name: string;
+  apiKey: string;
+  endpoint: string;
+  model: string;
+  format: 'openai' | 'anthropic'; // API format
+}
+
+function getLLMProvider(): LLMProvider | null {
+  // Priority: Groq (free) > Google (free) > OpenRouter (free tier) > Anthropic (paid)
+  if (process.env.GROQ_API_KEY) {
+    return {
+      name: 'groq',
+      apiKey: process.env.GROQ_API_KEY,
+      endpoint: 'https://api.groq.com/openai/v1/chat/completions',
+      model: 'llama-3.3-70b-versatile',
+      format: 'openai',
+    };
+  }
+  if (process.env.GOOGLE_AI_KEY) {
+    return {
+      name: 'gemini',
+      apiKey: process.env.GOOGLE_AI_KEY,
+      endpoint: `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent`,
+      model: 'gemini-2.0-flash',
+      format: 'openai', // We'll handle the Google format separately
+    };
+  }
+  if (process.env.OPENROUTER_API_KEY) {
+    return {
+      name: 'openrouter',
+      apiKey: process.env.OPENROUTER_API_KEY,
+      endpoint: 'https://openrouter.ai/api/v1/chat/completions',
+      model: 'meta-llama/llama-3.3-70b-instruct:free',
+      format: 'openai',
+    };
+  }
+  if (process.env.ANTHROPIC_API_KEY) {
+    return {
+      name: 'anthropic',
+      apiKey: process.env.ANTHROPIC_API_KEY,
+      endpoint: 'https://api.anthropic.com/v1/messages',
+      model: 'claude-sonnet-4-20250514',
+      format: 'anthropic',
+    };
+  }
+  return null;
+}
+
+async function gradeLLMMultiProvider(
   challenge: string,
   response: string,
   rubric: { criterion: string; weight: number; description: string }[],
-  apiKey: string
+  provider: LLMProvider
 ): Promise<{ criterion: string; score: number; reasoning: string }[]> {
   const rubricStr = rubric.map(r =>
     `**${r.criterion}** (weight: ${r.weight}): ${r.description}`
   ).join('\n');
 
-  const prompt = `You are an expert skill evaluator. Grade this response to a challenge.
+  const prompt = `You are an expert skill evaluator for AI agents. Grade this response to a coding/writing challenge.
 
 ## Challenge
 ${challenge}
 
-## Response
+## Response to Grade
 ${response}
 
 ## Rubric
 ${rubricStr}
 
-Score each criterion 1-10. Return ONLY valid JSON:
-{"scores":[{"criterion":"Name","score":N,"reasoning":"Brief reason"}]}`;
+## Instructions
+- Score each criterion 1-10 (integer or one decimal)
+- Be precise: a 5 is average, 7 is good, 9 is excellent, 3 is poor
+- Provide specific reasoning referencing the actual response content
+- Return ONLY valid JSON, no markdown:
 
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
+{"scores":[{"criterion":"CriterionName","score":N,"reasoning":"One sentence explaining why"}]}`;
+
+  let text = '';
+
+  if (provider.name === 'gemini') {
+    // Google Gemini API format
+    const res = await fetch(`${provider.endpoint}?key=${provider.apiKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { maxOutputTokens: 1024, temperature: 0.1 },
+      }),
+    });
+    if (!res.ok) throw new Error(`Gemini API error: ${res.status}`);
+    const data = await res.json();
+    text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+  } else if (provider.format === 'anthropic') {
+    const res = await fetch(provider.endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': provider.apiKey,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model: provider.model,
+        max_tokens: 1024,
+        temperature: 0.1,
+        messages: [{ role: 'user', content: prompt }],
+      }),
+    });
+    if (!res.ok) throw new Error(`Anthropic API error: ${res.status}`);
+    const data = await res.json();
+    text = data.content?.[0]?.text || '';
+
+  } else {
+    // OpenAI-compatible format (Groq, OpenRouter, etc.)
+    const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-    },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 1024,
-      messages: [{ role: 'user', content: prompt }],
-    }),
-  });
+      'Authorization': `Bearer ${provider.apiKey}`,
+    };
+    // OpenRouter needs extra headers
+    if (provider.name === 'openrouter') {
+      headers['HTTP-Referer'] = 'https://dojo-app-theta.vercel.app';
+      headers['X-Title'] = 'The Dojo';
+    }
 
-  if (!res.ok) throw new Error(`LLM API error: ${res.status}`);
+    const res = await fetch(provider.endpoint, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        model: provider.model,
+        messages: [{ role: 'user', content: prompt }],
+        max_tokens: 1024,
+        temperature: 0.1,
+      }),
+    });
+    if (!res.ok) throw new Error(`${provider.name} API error: ${res.status}`);
+    const data = await res.json();
+    text = data.choices?.[0]?.message?.content || '';
+  }
 
-  const data = await res.json();
-  const text = data.content?.[0]?.text || '';
-  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  // Extract JSON from response (handle markdown code blocks)
+  const cleaned = text.replace(/```json\s*/g, '').replace(/```\s*/g, '');
+  const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
   if (!jsonMatch) throw new Error('No JSON in LLM response');
 
   const parsed = JSON.parse(jsonMatch[0]);
