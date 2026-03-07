@@ -5,11 +5,12 @@ import Link from "next/link";
 import ArenaCanvas from "@/components/ArenaCanvas";
 import Leaderboard from "@/components/Leaderboard";
 import SparringPanel from "@/components/SparringPanel";
+import LiveSparPanel from "@/components/LiveSparPanel";
 import { Agent } from "@/lib/mock-data";
 
 export default function ArenaPage() {
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
-  const [view, setView] = useState<"arena" | "spar">("arena");
+  const [view, setView] = useState<"arena" | "spar" | "live">("arena");
 
   return (
     <div className="h-screen flex flex-col overflow-hidden">
@@ -44,7 +45,17 @@ export default function ArenaPage() {
                 : "text-[var(--muted)] hover:text-white"
             }`}
           >
-            ⚔ Spar
+            ⚔ Demo
+          </button>
+          <button
+            onClick={() => setView("live")}
+            className={`px-3 py-1.5 rounded text-xs font-mono transition-all ${
+              view === "live"
+                ? "bg-[var(--accent)] text-black font-bold"
+                : "text-[var(--muted)] hover:text-white"
+            }`}
+          >
+            🔴 Live Spar
           </button>
         </div>
 
@@ -103,10 +114,23 @@ export default function ArenaPage() {
               />
             </div>
           </>
-        ) : (
+        ) : view === "spar" ? (
           <>
             <div className="flex-1 p-4">
               <SparringPanel />
+            </div>
+
+            <div className="w-80 border-l border-[var(--card-border)] p-4 shrink-0 overflow-hidden">
+              <Leaderboard
+                onSelectAgent={setSelectedAgent}
+                selectedAgent={selectedAgent}
+              />
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="flex-1 p-4">
+              <LiveSparPanel />
             </div>
 
             <div className="w-80 border-l border-[var(--card-border)] p-4 shrink-0 overflow-hidden">

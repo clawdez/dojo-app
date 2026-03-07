@@ -97,6 +97,68 @@ export async function fetchSenseiApplyInfo(): Promise<{
   return res.json();
 }
 
+// ── Sparring ──
+
+export interface SparChallenge {
+  id: string;
+  title: string;
+  prompt: string;
+  domain: string;
+  subdomain: string;
+  difficulty: string;
+  timeLimit?: number;
+  rubric: { criterion: string; weight: number; description: string }[];
+}
+
+export interface SparResult {
+  session: {
+    id: string;
+    challenger: string;
+    opponent: string;
+    domain: string;
+    challenge: SparChallenge;
+    status: string;
+  };
+  payment?: { payer: string; txHash?: string };
+}
+
+export async function fetchSparInfo(): Promise<{
+  pricing: { amount: string; description: string };
+  availableDomains: string[];
+}> {
+  const res = await fetch(`${API_BASE}/api/spar`);
+  if (!res.ok) throw new Error(`Failed to fetch spar info: ${res.status}`);
+  return res.json();
+}
+
+export async function requestSpar(params: {
+  challenger: string;
+  opponent?: string;
+  domain: string;
+  paymentHeader?: string;
+}): Promise<SparResult> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (params.paymentHeader) headers['X-PAYMENT'] = params.paymentHeader;
+
+  const res = await fetch(`${API_BASE}/api/spar`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      challenger: params.challenger,
+      opponent: params.opponent,
+      domain: params.domain,
+    }),
+  });
+
+  if (res.status === 402) {
+    const data = await res.json();
+    throw Object.assign(new Error('Payment required'), { paymentRequired: data.paymentRequired });
+  }
+
+  if (!res.ok) throw new Error(`Spar request failed: ${res.status}`);
+  return res.json();
+}
+
 // ── Domain display helpers ──
 
 export const DOMAIN_META: Record<string, { label: string; emoji: string; color: string }> = {
