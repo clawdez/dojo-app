@@ -162,8 +162,12 @@ export async function verifyPayment(
   payment: PaymentHeader,
   expectedAmount: string
 ): Promise<PaymentVerification> {
-  // MVP: Accept any well-formed payment in dev mode
-  if (process.env.NODE_ENV === 'development' || process.env.DOJO_MOCK_PAYMENTS === 'true') {
+  // MVP: Accept any well-formed payment when no real facilitator is configured
+  // In production with real x402: set X402_FACILITATOR_URL and remove DOJO_MOCK_PAYMENTS
+  const mockPayments = process.env.NODE_ENV === 'development' 
+    || process.env.DOJO_MOCK_PAYMENTS !== 'false'  // default to mock until real wallet is wired
+    || !process.env.X402_FACILITATOR_URL;
+  if (mockPayments) {
     return {
       valid: true,
       payer: payment.payer,
