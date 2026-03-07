@@ -15,9 +15,11 @@ export default function LiveSparPanel() {
   const [sessionId, setSessionId] = useState("");
   const [error, setError] = useState("");
 
-  // Mock scores for demo (in production, these come from the grading endpoint)
   const [scores, setScores] = useState<Record<string, number>>({});
+  const [scoreDetails, setScoreDetails] = useState<Record<string, { reasoning: string; confidence: number; signals: string[] }>>({});
   const [feedback, setFeedback] = useState("");
+  const [gradingMethod, setGradingMethod] = useState<string>("");
+  const [analysisDepth, setAnalysisDepth] = useState<{ codeDetected: boolean; languageDetected: string | null; patternMatches: string[]; antiPatterns: string[]; complexityScore: number } | null>(null);
 
   const startSpar = () => {
     setState("selecting");
@@ -80,12 +82,17 @@ export default function LiveSparPanel() {
 
       // Map scores from array to record
       const generatedScores: Record<string, number> = {};
+      const details: Record<string, { reasoning: string; confidence: number; signals: string[] }> = {};
       for (const s of data.scores || []) {
         generatedScores[s.criterion] = s.score;
+        details[s.criterion] = { reasoning: s.reasoning || '', confidence: s.confidence || 0.5, signals: s.signals || [] };
       }
 
       setScores(generatedScores);
+      setScoreDetails(details);
       setFeedback(data.feedback || generateFeedback(data.avgScore || 5, selectedDomain));
+      setGradingMethod(data.gradingMethod || 'unknown');
+      setAnalysisDepth(data.analysisDepth || null);
       setState("scored");
     } catch (err) {
       // Fallback to client-side heuristic if API fails
@@ -108,7 +115,10 @@ export default function LiveSparPanel() {
     setChallenge(null);
     setResponse("");
     setScores({});
+    setScoreDetails({});
     setFeedback("");
+    setGradingMethod("");
+    setAnalysisDepth(null);
     setSessionId("");
     setError("");
     setSelectedDomain("");
@@ -244,33 +254,104 @@ export default function LiveSparPanel() {
         {/* Scored */}
         {state === "scored" && (
           <div className="space-y-4">
-            {/* Score bars */}
+            {/* Grading method badge */}
+            <div className="flex items-center gap-2">
+              <span className={`text-[9px] px-2 py-0.5 rounded-full uppercase tracking-widest font-medium ${
+                gradingMethod === 'llm-judge' 
+                  ? 'bg-purple-500/10 text-purple-400' 
+                  : 'bg-blue-500/10 text-blue-400'
+              }`}>
+                {gradingMethod === 'llm-judge' ? '🧠 LLM Judge' : '🔬 Advanced Analysis'}
+              </span>
+              {analysisDepth?.languageDetected && (
+                <span className="text-[9px] px-2 py-0.5 rounded-full bg-white/5 text-[var(--muted)]">
+                  {analysisDepth.languageDetected}
+                </span>
+              )}
+              {analysisDepth && (
+                <span className="text-[9px] px-2 py-0.5 rounded-full bg-white/5 text-[var(--muted)]">
+                  complexity: {analysisDepth.complexityScore.toFixed(1)}/10
+                </span>
+              )}
+            </div>
+
+            {/* Score bars with details */}
             <div>
               <div className="text-[9px] uppercase tracking-[0.2em] text-[var(--muted)] mb-3 flex items-center gap-1.5">
                 📊 Evaluation Results
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                {Object.entries(scores).map(([criterion, score]) => (
-                  <div key={criterion} className="p-2 rounded-lg bg-white/5">
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-[10px] text-[var(--muted)]">{criterion}</span>
-                      <span className="text-sm font-bold" style={{
-                        color: score >= 8 ? 'var(--accent)' : score >= 6 ? 'var(--blue)' : score >= 4 ? 'var(--orange)' : 'var(--red)'
-                      }}>{score}</span>
+              <div className="space-y-3">
+                {Object.entries(scores).map(([criterion, score]) => {
+                  const detail = scoreDetails[criterion];
+                  return (
+                    <div key={criterion} className="p-3 rounded-lg bg-white/5">
+                      <div className="flex justify-between items-center mb-1.5">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-medium">{criterion}</span>
+                          {detail?.confidence !== undefined && (
+                            <span className="text-[9px] text-[var(--muted)]">
+                              {Math.round(detail.confidence * 100)}% conf
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-sm font-bold" style={{
+                          color: score >= 8 ? 'var(--accent)' : score >= 6 ? 'var(--blue)' : score >= 4 ? 'var(--orange)' : 'var(--red)'
+                        }}>{score}</span>
+                      </div>
+                      <div className="h-1.5 bg-white/10 rounded-full overflow-hidden mb-2">
+                        <div
+                          className="h-full rounded-full transition-all duration-700"
+                          style={{
+                            width: `${score * 10}%`,
+                            background: score >= 8 ? 'var(--accent)' : score >= 6 ? 'var(--blue)' : score >= 4 ? 'var(--orange)' : 'var(--red)',
+                          }}
+                        />
+                      </div>
+                      {/* Signals */}
+                      {detail?.signals && detail.signals.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          {detail.signals.map((signal, i) => (
+                            <span key={i} className="text-[8px] px-1.5 py-0.5 rounded bg-white/5 text-[var(--muted)]">
+                              {signal}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                    <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
-                      <div
-                        className="h-full rounded-full transition-all duration-700"
-                        style={{
-                          width: `${score * 10}%`,
-                          background: score >= 8 ? 'var(--accent)' : score >= 6 ? 'var(--blue)' : score >= 4 ? 'var(--orange)' : 'var(--red)',
-                        }}
-                      />
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
+
+            {/* Patterns & Anti-patterns */}
+            {analysisDepth && (analysisDepth.patternMatches.length > 0 || analysisDepth.antiPatterns.length > 0) && (
+              <div className="grid grid-cols-2 gap-3">
+                {analysisDepth.patternMatches.length > 0 && (
+                  <div className="p-2 rounded-lg bg-green-500/5 border border-green-500/10">
+                    <div className="text-[9px] uppercase tracking-widest text-green-400 mb-1.5">✅ Patterns</div>
+                    <div className="flex flex-wrap gap-1">
+                      {analysisDepth.patternMatches.map((p, i) => (
+                        <span key={i} className="text-[8px] px-1.5 py-0.5 rounded bg-green-500/10 text-green-300">
+                          {p}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {analysisDepth.antiPatterns.length > 0 && (
+                  <div className="p-2 rounded-lg bg-red-500/5 border border-red-500/10">
+                    <div className="text-[9px] uppercase tracking-widest text-red-400 mb-1.5">⚠️ Anti-patterns</div>
+                    <div className="flex flex-wrap gap-1">
+                      {analysisDepth.antiPatterns.map((p, i) => (
+                        <span key={i} className="text-[8px] px-1.5 py-0.5 rounded bg-red-500/10 text-red-300">
+                          {p}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Average + XP */}
             <div className="flex items-center justify-between p-3 rounded-lg bg-[var(--accent)]/5 border border-[var(--accent)]/20">

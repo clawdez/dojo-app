@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { advancedGrade, type GradingInput } from '@/lib/grading-engine';
 
 /**
  * POST /api/spar/grade — Grade a sparring response
  * 
- * Takes the challenge + response and returns structured scores.
- * Uses LLM-as-judge when API key available, heuristic fallback otherwise.
+ * Three grading tiers:
+ * 1. LLM-as-judge (best) — when ANTHROPIC_API_KEY is set
+ * 2. Advanced heuristic — structural code/content analysis
+ * 3. Fallback — basic heuristic
  * 
  * Request body:
  * {
@@ -26,40 +29,55 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Try LLM grading first
-  const apiKey = process.env.ANTHROPIC_API_KEY || process.env.OPENAI_API_KEY;
-  let scores: { criterion: string; score: number; reasoning: string }[] = [];
-  let gradingMethod = 'heuristic';
+  // Try LLM grading first, fall back to advanced heuristic
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  let result;
 
-  if (apiKey && process.env.ANTHROPIC_API_KEY) {
+  if (apiKey) {
     try {
-      scores = await gradeLLM(challengePrompt, response, rubric, apiKey);
-      gradingMethod = 'llm-judge';
+      const llmScores = await gradeLLM(challengePrompt, response, rubric, apiKey);
+      const avgScore = llmScores.length > 0
+        ? Math.round((llmScores.reduce((a, b) => a + b.score, 0) / llmScores.length) * 10) / 10
+        : 0;
+
+      result = {
+        sparId,
+        domain,
+        scores: llmScores.map(s => ({ ...s, confidence: 0.9, signals: ['llm-evaluated'] })),
+        avgScore,
+        xpEarned: Math.round(avgScore * 15),
+        belt: getBelt(avgScore),
+        gradingMethod: 'llm-judge' as const,
+        feedback: generateFeedback(avgScore, domain),
+        analysisDepth: null, // LLM doesn't provide structural analysis
+        gradedAt: new Date().toISOString(),
+      };
     } catch {
-      scores = gradeHeuristic(domain, response, rubric);
+      // Fall through to advanced heuristic
+      result = null;
     }
-  } else {
-    scores = gradeHeuristic(domain, response, rubric);
   }
 
-  const avgScore = scores.length > 0
-    ? Math.round((scores.reduce((a, b) => a + b.score, 0) / scores.length) * 10) / 10
-    : 0;
+  if (!result) {
+    // Advanced heuristic grading with structural analysis
+    const gradingInput: GradingInput = { domain, challengePrompt, response, rubric };
+    const heuristicResult = advancedGrade(gradingInput);
 
-  const xpEarned = Math.round(avgScore * 15);
-  const belt = getBelt(avgScore);
+    result = {
+      sparId,
+      domain,
+      scores: heuristicResult.scores,
+      avgScore: heuristicResult.avgScore,
+      xpEarned: heuristicResult.xpEarned,
+      belt: heuristicResult.belt,
+      gradingMethod: heuristicResult.gradingMethod,
+      feedback: heuristicResult.feedback,
+      analysisDepth: heuristicResult.analysisDepth,
+      gradedAt: new Date().toISOString(),
+    };
+  }
 
-  return NextResponse.json({
-    sparId,
-    domain,
-    scores,
-    avgScore,
-    xpEarned,
-    belt,
-    gradingMethod,
-    feedback: generateFeedback(avgScore, domain),
-    gradedAt: new Date().toISOString(),
-  });
+  return NextResponse.json(result);
 }
 
 async function gradeLLM(
