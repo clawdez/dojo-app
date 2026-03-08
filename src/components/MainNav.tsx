@@ -5,9 +5,9 @@ import { usePathname } from "next/navigation";
 
 const NAV_ITEMS = [
   { href: "/", label: "Home" },
-  { href: "/assess", label: "Assess" },
-  { href: "/marketplace", label: "Marketplace" },
-  { href: "/assessors", label: "Assessors" },
+  { href: "/sessions", label: "Train" },
+  { href: "/trainers", label: "Trainers" },
+  { href: "/agent", label: "My Agent" },
   { href: "/leaderboard", label: "Leaderboard" },
 ];
 
@@ -15,7 +15,7 @@ export default function MainNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="sticky top-0 z-50 border-b border-[var(--card-border)] bg-[var(--background)]">
+    <nav className="sticky top-0 z-50 border-b border-[var(--card-border)] bg-[var(--background)]/90 backdrop-blur">
       <div className="max-w-6xl mx-auto h-14 px-6 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 hover:opacity-85 transition-opacity">
           <span className="text-lg">◉</span>

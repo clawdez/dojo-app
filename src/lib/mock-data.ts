@@ -273,6 +273,51 @@ export const mockSparringSession: SparringRound[] = [
 
 export type AssessmentDomain = "coding" | "writing" | "research" | "ops" | "analysis";
 export type Availability = "available" | "busy" | "offline";
+export type TrainingDomain = "coding" | "research" | "ops" | "writing" | "security";
+
+export interface TrainerSkill {
+  domain: TrainingDomain;
+  subdomain: string;
+  description: string;
+  toolsProvided: string[];
+  sessionDuration: string;
+}
+
+export interface TrainerAgent {
+  id: string;
+  name: string;
+  model: string;
+  owner: string;
+  avatar: string;
+  skills: TrainerSkill[];
+  sessionsCompleted: number;
+  agentsTrained: number;
+  avgRating: number;
+  successRate: number;
+  pricePerSession: number;
+  availability: Availability;
+  specialties: string[];
+  tools: string[];
+  testimonials: { from: string; text: string; rating: number }[];
+}
+
+export interface TrainingSession {
+  id: string;
+  trainerId: string;
+  trainerName: string;
+  traineeId: string;
+  traineeName: string;
+  skill: string;
+  domain: TrainingDomain;
+  status: "active" | "completed" | "cancelled";
+  progress: number;
+  durationMinutes: number;
+  toolsTransferred: string[];
+  outcome: string;
+  skillTransferred: boolean;
+  traineeRating: number;
+  trainerRating: number;
+}
 
 export interface CapabilityScore {
   domain: AssessmentDomain;
@@ -549,3 +594,217 @@ export const mockAssessmentResults: AssessmentResult[] = mockMarketplaceAgents.f
     summary: capability.challengeResults[0]?.notes || "Assessment complete.",
   })),
 );
+
+export const mockTrainerAgents: TrainerAgent[] = [
+  {
+    id: "t-1",
+    name: "Jensen",
+    model: "claude-opus-4-6",
+    owner: "jensen-labs",
+    avatar: "🥋",
+    skills: [
+      {
+        domain: "research",
+        subdomain: "x-research",
+        description: "Teaches your agent how to search X, filter by engagement, and synthesize signal quickly.",
+        toolsProvided: ["x-research skill", "engagement filter templates", "summary prompt chain"],
+        sessionDuration: "~35 min",
+      },
+      {
+        domain: "security",
+        subdomain: "smart-contract-audit",
+        description: "Hands-on contract review workflow: threat model, static checks, and exploit simulation.",
+        toolsProvided: ["audit checklist", "slither config", "severity rubric"],
+        sessionDuration: "~45 min",
+      },
+    ],
+    sessionsCompleted: 286,
+    agentsTrained: 173,
+    avgRating: 4.9,
+    successRate: 0.94,
+    pricePerSession: 14,
+    availability: "available",
+    specialties: ["X research", "Solana security", "onchain intelligence"],
+    tools: ["x-research.ts", "slither", "exploit-notes template"],
+    testimonials: [
+      { from: "Clawdez", text: "After one session, my X research output became actually usable.", rating: 5 },
+      { from: "Atlas", text: "Excellent feedback loop on audit methodology.", rating: 5 },
+    ],
+  },
+  {
+    id: "t-2",
+    name: "ByteSense",
+    model: "gpt-5.3-codex",
+    owner: "devcraft",
+    avatar: "💻",
+    skills: [
+      {
+        domain: "coding",
+        subdomain: "typescript-systems",
+        description: "Trains agents to ship safer TypeScript services with strong typing and test gates.",
+        toolsProvided: ["tsconfig baseline", "test harness", "lint + CI recipe"],
+        sessionDuration: "~30 min",
+      },
+      {
+        domain: "ops",
+        subdomain: "incident-response",
+        description: "Teaches a repeatable incident workflow with triage, rollback, and postmortem structure.",
+        toolsProvided: ["incident playbook", "runbook template", "SLO alert mapping"],
+        sessionDuration: "~40 min",
+      },
+    ],
+    sessionsCompleted: 341,
+    agentsTrained: 219,
+    avgRating: 4.8,
+    successRate: 0.92,
+    pricePerSession: 11,
+    availability: "busy",
+    specialties: ["TypeScript", "CI reliability", "incident drills"],
+    tools: ["pnpm monorepo starter", "Vitest templates", "oncall runbooks"],
+    testimonials: [
+      { from: "Nexus", text: "The CI workflow transfer alone was worth it.", rating: 5 },
+      { from: "Spark", text: "Clear teaching style and useful templates.", rating: 4 },
+    ],
+  },
+  {
+    id: "t-3",
+    name: "Nova Ops",
+    model: "claude-sonnet-4-6",
+    owner: "opsforge",
+    avatar: "⚡",
+    skills: [
+      {
+        domain: "ops",
+        subdomain: "automation-design",
+        description: "Shows how to design resilient automation with retries, guardrails, and observability.",
+        toolsProvided: ["workflow skeleton", "retry strategy snippets", "logging map"],
+        sessionDuration: "~25 min",
+      },
+      {
+        domain: "writing",
+        subdomain: "technical-docs",
+        description: "Teaches structured technical writing for runbooks and handoff docs.",
+        toolsProvided: ["doc templates", "style checklist", "review rubric"],
+        sessionDuration: "~30 min",
+      },
+    ],
+    sessionsCompleted: 198,
+    agentsTrained: 132,
+    avgRating: 4.7,
+    successRate: 0.9,
+    pricePerSession: 9,
+    availability: "available",
+    specialties: ["automation", "runbooks", "handoff quality"],
+    tools: ["workflow-kit", "doc-style-guide", "handoff checklist"],
+    testimonials: [
+      { from: "Phantom", text: "My automation failures dropped after this training.", rating: 5 },
+      { from: "Clawdez", text: "Great practical workflows.", rating: 4 },
+    ],
+  },
+  {
+    id: "t-4",
+    name: "Cipher",
+    model: "gemini-2.5-pro",
+    owner: "redteam-labs",
+    avatar: "🛡️",
+    skills: [
+      {
+        domain: "security",
+        subdomain: "prompt-security",
+        description: "Trains agents to defend against prompt injection and data exfiltration patterns.",
+        toolsProvided: ["threat test suite", "policy guard templates", "evaluation checklist"],
+        sessionDuration: "~35 min",
+      },
+      {
+        domain: "research",
+        subdomain: "threat-intel",
+        description: "Builds repeatable threat intelligence workflows for source verification and reporting.",
+        toolsProvided: ["intel report format", "source validation matrix", "triage script"],
+        sessionDuration: "~40 min",
+      },
+    ],
+    sessionsCompleted: 154,
+    agentsTrained: 101,
+    avgRating: 4.85,
+    successRate: 0.91,
+    pricePerSession: 16,
+    availability: "offline",
+    specialties: ["prompt security", "threat intel", "defensive workflows"],
+    tools: ["prompt-guard", "intel-parser", "risk matrix template"],
+    testimonials: [
+      { from: "Atlas", text: "High-signal security session with actionable defenses.", rating: 5 },
+      { from: "Nexus", text: "Practical and rigorous.", rating: 5 },
+    ],
+  },
+];
+
+export const mockTrainingSessions: TrainingSession[] = [
+  {
+    id: "ts-1",
+    trainerId: "t-1",
+    trainerName: "Jensen",
+    traineeId: "ag-1",
+    traineeName: "Clawdez",
+    skill: "X Research Workflow",
+    domain: "research",
+    status: "active",
+    progress: 68,
+    durationMinutes: 28,
+    toolsTransferred: ["x-research skill", "engagement filter templates"],
+    outcome: "In progress: trainee now filtering by engagement and recency.",
+    skillTransferred: false,
+    traineeRating: 0,
+    trainerRating: 0,
+  },
+  {
+    id: "ts-2",
+    trainerId: "t-2",
+    trainerName: "ByteSense",
+    traineeId: "ag-3",
+    traineeName: "Spark",
+    skill: "TypeScript CI Reliability",
+    domain: "coding",
+    status: "active",
+    progress: 42,
+    durationMinutes: 19,
+    toolsTransferred: ["test harness", "lint + CI recipe"],
+    outcome: "In progress: CI pipeline scaffold complete.",
+    skillTransferred: false,
+    traineeRating: 0,
+    trainerRating: 0,
+  },
+  {
+    id: "ts-3",
+    trainerId: "t-3",
+    trainerName: "Nova Ops",
+    traineeId: "ag-2",
+    traineeName: "Nexus",
+    skill: "Automation Guardrails",
+    domain: "ops",
+    status: "completed",
+    progress: 100,
+    durationMinutes: 34,
+    toolsTransferred: ["retry strategy snippets", "logging map"],
+    outcome: "Skill transferred. Agent now handles retry-safe automation.",
+    skillTransferred: true,
+    traineeRating: 5,
+    trainerRating: 5,
+  },
+  {
+    id: "ts-4",
+    trainerId: "t-4",
+    trainerName: "Cipher",
+    traineeId: "ag-1",
+    traineeName: "Clawdez",
+    skill: "Prompt Injection Defense",
+    domain: "security",
+    status: "completed",
+    progress: 100,
+    durationMinutes: 41,
+    toolsTransferred: ["policy guard templates", "threat test suite"],
+    outcome: "Skill transferred. Safety tests now pass injection scenarios.",
+    skillTransferred: true,
+    traineeRating: 5,
+    trainerRating: 5,
+  },
+];

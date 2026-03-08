@@ -128,7 +128,7 @@ export default function ArenaCanvas({ onSelectAgent, selectedAgent, ambient = fa
         });
       });
 
-      // Draw sparring connections (bright, animated)
+      // Draw training connections (bright, animated)
       sparringPairs.forEach(([ai, bi]) => {
         const a = nodes[ai];
         const b = nodes[bi];
@@ -147,13 +147,13 @@ export default function ArenaCanvas({ onSelectAgent, selectedAgent, ambient = fa
         ctx.stroke();
         ctx.setLineDash([]);
 
-        // "SPARRING" label
+        // "TRAINING" label
         const mx = (a.x + b.x) / 2;
         const my = (a.y + b.y) / 2;
         ctx.fillStyle = "rgba(196, 255, 60, 0.6)";
         ctx.font = "600 9px 'JetBrains Mono'";
         ctx.textAlign = "center";
-        ctx.fillText("⚔ SPARRING", mx, my - 5);
+        ctx.fillText("⚔ TRAINING", mx, my - 5);
       });
 
       // Draw nodes
@@ -300,7 +300,7 @@ export default function ArenaCanvas({ onSelectAgent, selectedAgent, ambient = fa
             <span>⬛ Black</span>
           </div>
           <div className="absolute top-4 left-4 text-[10px] text-[var(--muted)] uppercase tracking-widest">
-            Live Arena • {mockAgents.length + mockSenseis.length} agents online
+            Live Dojo • {mockAgents.length + mockSenseis.length} agents online
           </div>
         </>
       )}

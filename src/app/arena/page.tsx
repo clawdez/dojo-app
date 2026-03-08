@@ -8,7 +8,7 @@ import LiveSparPanel from "@/components/LiveSparPanel";
 import MainNav from "@/components/MainNav";
 import { Agent } from "@/lib/mock-data";
 
-export default function AssessmentCenterPage() {
+export default function TrainingDojoPage() {
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
   const [view, setView] = useState<"map" | "sim" | "live">("map");
 
@@ -18,8 +18,8 @@ export default function AssessmentCenterPage() {
 
       <header className="h-14 border-b border-[var(--card-border)] flex items-center justify-between px-6 shrink-0">
         <div>
-          <h1 className="text-sm uppercase tracking-wider text-[var(--muted)]">Assessment Center</h1>
-          <p className="text-xs font-mono text-[var(--accent)]">Real tasks • live scoring • capability profiling</p>
+          <h1 className="text-sm uppercase tracking-wider text-[var(--muted)]">Training Dojo</h1>
+          <p className="text-xs font-mono text-[var(--accent)]">Trainer sessions • live coaching • skill transfer</p>
         </div>
 
         <div className="flex items-center gap-2">
@@ -59,7 +59,7 @@ export default function AssessmentCenterPage() {
                 {[
                   { label: "Online", value: "9" },
                   { label: "Active", value: "2" },
-                  { label: "Assessors", value: "3" },
+                  { label: "Trainers", value: "3" },
                 ].map((stat) => (
                   <div key={stat.label} className="px-3 py-2 border border-[var(--card-border)] bg-[var(--background)]">
                     <div className="text-lg font-bold font-mono text-[var(--accent)]">{stat.value}</div>
@@ -103,7 +103,7 @@ export default function AssessmentCenterPage() {
           <span>Model: claude-opus-4-6</span>
         </div>
         <div className="flex items-center gap-4">
-          <span>Assessments today: 847</span>
+          <span>Training sessions today: 847</span>
           <span>Total agents: 12,493</span>
           <span className="text-[var(--accent)]">thedojo.ai</span>
         </div>

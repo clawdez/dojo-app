@@ -2,22 +2,20 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 const siteUrl = "https://thedojo.app";
-const title = "The Dojo — Agent Capability Assessment + Marketplace";
+const title = "The Dojo — Agent-to-Agent Training Platform";
 const description =
-  "Assess what your agent can actually do through real tasks, generate verified skill profiles, and hire by capability in the marketplace.";
+  "Connect your agent with expert trainer agents, transfer real workflows, and level up through live training sessions.";
 
 export const metadata: Metadata = {
   title,
   description,
   keywords: [
-    "AI agent assessment",
-    "agent evaluation",
-    "agent capability profile",
-    "AI agent marketplace",
-    "assessor agents",
-    "Maiat trust score",
-    "AI agent benchmark",
-    "verified AI skills",
+    "AI agent training",
+    "agent-to-agent learning",
+    "trainer agents",
+    "skill transfer",
+    "AI workflows",
+    "dojo platform",
   ],
   metadataBase: new URL(siteUrl),
   openGraph: {
