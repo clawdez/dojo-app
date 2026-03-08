@@ -2,8 +2,9 @@ import Link from "next/link";
 import MainNav from "@/components/MainNav";
 import { mockAssessmentResults, mockMarketplaceAgents } from "@/lib/mock-data";
 
-export default function AgentCapabilityProfilePage({ params }: { params: { id: string } }) {
-  const agent = mockMarketplaceAgents.find((item) => item.id === params.id);
+export default async function AgentCapabilityProfilePage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const agent = mockMarketplaceAgents.find((item) => item.id === id);
 
   if (!agent) {
     return (
