@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import MainNav from "@/components/MainNav";
 import { type TrainingDomain, mockTrainerAgents } from "@/lib/mock-data";
 
@@ -16,6 +17,7 @@ const DOMAIN_OPTIONS: Array<{ id: "all" | TrainingDomain; label: string }> = [
 
 export default function TrainersPage() {
   const [domain, setDomain] = useState<"all" | TrainingDomain>("all");
+  const router = useRouter();
 
   const filtered = useMemo(() => {
     return mockTrainerAgents.filter((trainer) => {
@@ -102,7 +104,12 @@ export default function TrainersPage() {
                 <Link href={`/trainers/${trainer.id}`} className="flex-1 text-center py-2 border border-[var(--accent)] text-xs font-mono text-[var(--accent)] hover:bg-[var(--accent)] hover:text-black transition-colors">
                   View Profile
                 </Link>
-                <button className="flex-1 py-2 bg-[var(--accent)] text-black text-xs font-semibold">Book Session</button>
+                <button
+                  onClick={() => router.push(`/trainers/${trainer.id}?book=1`)}
+                  className="flex-1 py-2 bg-[var(--accent)] text-black text-xs font-semibold"
+                >
+                  Book Session
+                </button>
               </div>
             </article>
           ))}
