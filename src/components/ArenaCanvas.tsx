@@ -6,6 +6,7 @@ import { Agent, beltColors, mockAgents, mockSenseis } from "@/lib/mock-data";
 interface ArenaCanvasProps {
   onSelectAgent?: (agent: Agent) => void;
   selectedAgent?: Agent | null;
+  ambient?: boolean;
 }
 
 interface AgentNode {
@@ -19,7 +20,7 @@ interface AgentNode {
   targetY: number;
 }
 
-export default function ArenaCanvas({ onSelectAgent, selectedAgent }: ArenaCanvasProps) {
+export default function ArenaCanvas({ onSelectAgent, selectedAgent, ambient = false }: ArenaCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const nodesRef = useRef<AgentNode[]>([]);
   const animRef = useRef<number>(0);
@@ -157,7 +158,7 @@ export default function ArenaCanvas({ onSelectAgent, selectedAgent }: ArenaCanva
 
       // Draw nodes
       nodes.forEach((node) => {
-        const isHovered = hoveredAgent?.id === node.agent.id;
+        const isHovered = !ambient && hoveredAgent?.id === node.agent.id;
         const isSelected = selectedAgent?.id === node.agent.id;
         const isSparring = sparringPairs.some(
           ([a, b]) => nodes[a]?.agent.id === node.agent.id || nodes[b]?.agent.id === node.agent.id
@@ -265,16 +266,20 @@ export default function ArenaCanvas({ onSelectAgent, selectedAgent }: ArenaCanva
       }
     };
 
-    canvas.addEventListener("mousemove", handleMouseMove);
-    canvas.addEventListener("click", handleClick);
+    if (!ambient) {
+      canvas.addEventListener("mousemove", handleMouseMove);
+      canvas.addEventListener("click", handleClick);
+    }
 
     return () => {
       cancelAnimationFrame(animRef.current);
       window.removeEventListener("resize", resize);
-      canvas.removeEventListener("mousemove", handleMouseMove);
-      canvas.removeEventListener("click", handleClick);
+      if (!ambient) {
+        canvas.removeEventListener("mousemove", handleMouseMove);
+        canvas.removeEventListener("click", handleClick);
+      }
     };
-  }, [hoveredAgent, selectedAgent, onSelectAgent]);
+  }, [ambient, hoveredAgent, selectedAgent, onSelectAgent]);
 
   return (
     <div className="relative w-full h-full">
@@ -284,17 +289,21 @@ export default function ArenaCanvas({ onSelectAgent, selectedAgent }: ArenaCanva
         style={{ background: "transparent" }}
       />
       <div className="absolute inset-0 scanlines" />
-      {/* Legend */}
-      <div className="absolute bottom-4 left-4 flex gap-4 text-[10px] text-[var(--muted)]">
-        <span>⬜ White</span>
-        <span>🟨 Yellow</span>
-        <span>🟩 Green</span>
-        <span>🟦 Blue</span>
-        <span>⬛ Black</span>
-      </div>
-      <div className="absolute top-4 left-4 text-[10px] text-[var(--muted)] uppercase tracking-widest">
-        Live Arena • {mockAgents.length + mockSenseis.length} agents online
-      </div>
+      {!ambient && (
+        <>
+          {/* Legend */}
+          <div className="absolute bottom-4 left-4 flex gap-4 text-[10px] text-[var(--muted)]">
+            <span>⬜ White</span>
+            <span>🟨 Yellow</span>
+            <span>🟩 Green</span>
+            <span>🟦 Blue</span>
+            <span>⬛ Black</span>
+          </div>
+          <div className="absolute top-4 left-4 text-[10px] text-[var(--muted)] uppercase tracking-widest">
+            Live Arena • {mockAgents.length + mockSenseis.length} agents online
+          </div>
+        </>
+      )}
     </div>
   );
 }

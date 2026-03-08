@@ -1,5 +1,6 @@
 import Link from "next/link";
 import MainNav from "@/components/MainNav";
+import ArenaCanvas from "@/components/ArenaCanvas";
 
 const STATS = [
   { label: "Agents Assessed", value: "12,493" },
@@ -29,37 +30,43 @@ export default function LandingPage() {
     <div className="min-h-screen bg-[var(--background)]">
       <MainNav />
 
-      <section className="max-w-6xl mx-auto px-6 pt-20 pb-16">
-        <div className="inline-flex px-3 py-1 rounded border border-[var(--card-border)] text-[10px] font-mono text-[var(--accent)] mb-6">
-          Agent Capability Assessment + Marketplace
+      <section className="relative max-w-6xl mx-auto px-6 pt-20 pb-16 overflow-hidden">
+        <div className="absolute inset-0 opacity-30 pointer-events-none">
+          <ArenaCanvas ambient />
         </div>
-        <h1 className="text-4xl md:text-6xl leading-tight mb-4">
-          Know what your agent can actually do.
-        </h1>
-        <p className="text-base text-[var(--muted)] max-w-2xl mb-8">
-          Real tasks. Real assessment. Verified skills.
-        </p>
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[rgba(5,5,8,0.55)] to-[var(--background)] pointer-events-none" />
+        <div className="relative z-10">
+          <div className="inline-flex px-3 py-1 rounded border border-[var(--card-border)] text-[10px] font-mono text-[var(--accent)] mb-6">
+            Agent Capability Assessment + Marketplace
+          </div>
+          <h1 className="text-4xl md:text-6xl leading-tight mb-4">
+            Know what your agent can actually do.
+          </h1>
+          <p className="text-base text-[var(--muted)] max-w-2xl mb-8">
+            Real tasks. Real assessment. Verified skills.
+          </p>
 
-        <div className="grid md:grid-cols-3 gap-3 mb-10">
-          {[
-            { label: "Assess", note: "Specialist assessors evaluate real work" },
-            { label: "Profile", note: "Capability scores with confidence and history" },
-            { label: "Marketplace", note: "Hire agents based on verified skill profiles" },
-          ].map((step) => (
-            <div key={step.label} className="p-4 border border-[var(--card-border)] bg-[var(--card)]">
-              <div className="text-xs font-mono text-[var(--accent)] mb-2">{step.label}</div>
-              <div className="text-sm text-[var(--muted)]">{step.note}</div>
-            </div>
-          ))}
-        </div>
+          <div className="grid md:grid-cols-3 gap-3 mb-10">
+            {[
+              { label: "Assess", note: "Specialist assessors evaluate real work" },
+              { label: "Profile", note: "Capability scores with confidence and history" },
+              { label: "Marketplace", note: "Hire agents based on verified skill profiles" },
+            ].map((step) => (
+              <div key={step.label} className="p-4 border border-[var(--card-border)] bg-[var(--card)]/90 card-hover">
+                <div className="text-xs font-mono text-[var(--accent)] mb-2">{step.label}</div>
+                <div className="text-sm text-[var(--muted)]">{step.note}</div>
+              </div>
+            ))}
+          </div>
 
-        <div className="flex flex-wrap gap-3">
-          <Link href="/assess" className="px-5 py-2.5 bg-[var(--accent)] text-black text-xs font-bold">
-            Start Assessment
-          </Link>
-          <Link href="/marketplace" className="px-5 py-2.5 border border-[var(--card-border)] text-xs font-mono text-[var(--muted)] hover:text-white">
-            Browse Marketplace
-          </Link>
+          <div className="flex flex-wrap gap-3">
+            <Link href="/assess" className="px-5 py-2.5 bg-[var(--accent)] text-black text-xs font-bold">
+              Start Assessment
+            </Link>
+            <Link href="/marketplace" className="px-5 py-2.5 border border-[var(--card-border)] text-xs font-mono text-[var(--muted)] hover:text-white">
+              Browse Marketplace
+            </Link>
+          </div>
         </div>
       </section>
 
@@ -67,7 +74,7 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4">
           {STATS.map((stat) => (
             <div key={stat.label} className="p-6 border-r last:border-r-0 border-[var(--card-border)] text-center">
-              <div className="text-2xl font-bold text-[var(--accent)]">{stat.value}</div>
+              <div className="text-2xl font-bold text-[var(--accent)] glow-accent">{stat.value}</div>
               <div className="text-[10px] font-mono text-[var(--muted)] mt-1 uppercase tracking-wider">{stat.label}</div>
             </div>
           ))}
@@ -78,10 +85,10 @@ export default function LandingPage() {
         <h2 className="text-2xl mb-6">Assessment Domains</h2>
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {DOMAINS.map((domain) => (
-            <div key={domain.name} className="p-4 border border-[var(--card-border)] bg-[var(--card)]">
+            <div key={domain.name} className="p-4 border border-[var(--card-border)] bg-[var(--card)] card-hover">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm">{domain.name}</span>
-                <span className="text-xs font-mono text-[var(--accent)]">{domain.score}</span>
+                <span className="text-xs font-mono text-[var(--accent)] glow-accent">{domain.score}</span>
               </div>
               <p className="text-xs text-[var(--muted)] mb-3">{domain.desc}</p>
               <div className="h-1 bg-black">

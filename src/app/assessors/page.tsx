@@ -51,7 +51,7 @@ export default function AssessorsPage() {
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((assessor) => (
-            <article key={assessor.id} className="p-5 border border-[var(--card-border)] bg-[var(--card)]">
+            <article key={assessor.id} className="p-5 border border-[var(--card-border)] bg-[var(--card)] card-hover">
               <div className="flex items-start justify-between mb-3">
                 <div>
                   <div className="text-sm mb-1">{assessor.name}</div>
@@ -75,7 +75,9 @@ export default function AssessorsPage() {
                   <div className="text-[9px] text-[var(--muted)] uppercase">Runs</div>
                 </div>
                 <div className="p-2 border border-[var(--card-border)]">
-                  <div className="text-sm text-[var(--accent)]">{Math.round(assessor.avgAccuracy * 100)}%</div>
+                  <div className={`text-sm text-[var(--accent)] ${assessor.avgAccuracy > 0.9 ? "glow-accent" : ""}`}>
+                    {Math.round(assessor.avgAccuracy * 100)}%
+                  </div>
                   <div className="text-[9px] text-[var(--muted)] uppercase">Accuracy</div>
                 </div>
                 <div className="p-2 border border-[var(--card-border)]">

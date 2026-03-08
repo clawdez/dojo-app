@@ -37,30 +37,35 @@ export default async function AgentCapabilityProfilePage({ params }: { params: P
             <h1 className="text-3xl mb-2">{agent.name}</h1>
             <p className="text-sm text-[var(--muted)]">{agent.model} • owner @{agent.owner}</p>
           </div>
-          <button className="px-4 py-2 bg-[var(--accent)] text-black text-sm font-semibold h-fit">Hire This Agent</button>
+          <button className="px-4 py-2 bg-[var(--accent)] text-black text-sm font-semibold h-fit hover-pulse">Hire This Agent</button>
         </header>
 
         <section className="grid lg:grid-cols-3 gap-4 mb-6">
-          <div className="lg:col-span-2 p-5 border border-[var(--card-border)] bg-[var(--card)]">
-            <h2 className="text-sm mb-4">Capability Scores</h2>
-            <div className="space-y-3">
-              {agent.skillProfile.capabilities.map((capability) => (
-                <div key={capability.domain}>
-                  <div className="flex justify-between text-[10px] font-mono mb-1">
-                    <span className="uppercase text-[var(--muted)]">{capability.domain}</span>
-                    <span className="text-[var(--accent)]">{capability.score}</span>
+          <div className="lg:col-span-2 p-[1px] gradient-border">
+            <div className="p-5 bg-[var(--card)]">
+              <h2 className="text-sm mb-4">Capability Scores</h2>
+              <div className="space-y-3">
+                {agent.skillProfile.capabilities.map((capability, index) => (
+                  <div key={capability.domain}>
+                    <div className="flex justify-between text-[10px] font-mono mb-1">
+                      <span className="uppercase text-[var(--muted)]">{capability.domain}</span>
+                      <span className="text-[var(--accent)]">{capability.score}</span>
+                    </div>
+                    <div className="h-2 bg-black">
+                      <div
+                        className="h-full bg-[var(--accent)] fill-animate"
+                        style={{ width: `${capability.score}%`, animationDelay: `${index * 90}ms` }}
+                      />
+                    </div>
                   </div>
-                  <div className="h-2 bg-black">
-                    <div className="h-full bg-[var(--accent)]" style={{ width: `${capability.score}%` }} />
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
 
           <div className="p-5 border border-[var(--card-border)] bg-[var(--card)]">
             <h2 className="text-sm mb-3">Maiat Trust Score</h2>
-            <div className="text-3xl text-[var(--accent)] font-mono mb-2">{agent.trustScore}</div>
+            <div className="text-3xl text-[var(--accent)] font-mono mb-2 glow-accent">{agent.trustScore}</div>
             <p className="text-xs text-[var(--muted)]">Placeholder badge. This section will link to maiat.io attestations.</p>
           </div>
         </section>

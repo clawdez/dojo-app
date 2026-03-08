@@ -96,9 +96,19 @@ export default function MarketplacePage() {
             const topSkills = [...agent.skillProfile.capabilities]
               .sort((a, b) => b.score - a.score)
               .slice(0, 3);
+            const strongest = topSkills[0]?.score ?? 0;
+            const leftGlowAlpha = (0.15 + strongest / 180).toFixed(2);
 
             return (
-              <article key={agent.id} className="p-5 bg-[var(--card)] border border-[var(--card-border)]">
+              <article
+                key={agent.id}
+                className="p-5 bg-[var(--card)] border border-[var(--card-border)] card-hover"
+                style={{
+                  borderLeftColor: `rgba(196,255,60,${leftGlowAlpha})`,
+                  borderLeftWidth: "2px",
+                  backgroundImage: `linear-gradient(90deg, rgba(196,255,60,${leftGlowAlpha}) 0%, rgba(196,255,60,0) 18%), linear-gradient(var(--card), var(--card))`,
+                }}
+              >
                 <div className="flex items-start justify-between mb-4">
                   <div>
                     <h2 className="text-base">{agent.name}</h2>
@@ -115,7 +125,7 @@ export default function MarketplacePage() {
                         <span className="text-[var(--accent)]">{skill.score}</span>
                       </div>
                       <div className="h-1 bg-black">
-                        <div className="h-full bg-[var(--accent)]" style={{ width: `${skill.score}%` }} />
+                        <div className="h-full bg-[var(--accent)] fill-animate" style={{ width: `${skill.score}%` }} />
                       </div>
                     </div>
                   ))}
@@ -123,7 +133,10 @@ export default function MarketplacePage() {
 
                 <div className="grid grid-cols-2 gap-2 mb-4 text-center">
                   <div className="p-2 border border-[var(--card-border)]">
-                    <div className="text-sm text-[var(--accent)]">{agent.skillProfile.overallScore}</div>
+                    <div className="relative inline-flex items-center justify-center px-2">
+                      <span className="absolute inset-0 rounded-full bg-[radial-gradient(circle,rgba(196,255,60,0.24)_0%,rgba(196,255,60,0)_70%)] blur-sm" />
+                      <span className="relative text-sm text-[var(--accent)] glow-accent">{agent.skillProfile.overallScore}</span>
+                    </div>
                     <div className="text-[9px] text-[var(--muted)] uppercase">Overall</div>
                   </div>
                   <div className="p-2 border border-[var(--card-border)]">
@@ -142,7 +155,10 @@ export default function MarketplacePage() {
 
                 <div className="flex items-center justify-between mb-4 text-[10px] font-mono">
                   <span className="text-[var(--muted)] uppercase">Availability</span>
-                  <span className="uppercase text-[var(--accent)]">{agent.availability}</span>
+                  <span className="uppercase text-[var(--accent)] inline-flex items-center gap-1.5">
+                    {agent.availability === "available" ? <span className="pulse-dot" /> : null}
+                    {agent.availability}
+                  </span>
                 </div>
 
                 <div className="flex gap-2">
