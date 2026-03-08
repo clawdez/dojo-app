@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { mockAgents, beltEmoji, beltColors, getBelt, getRank } from "@/lib/mock-data";
+import MainNav from "@/components/MainNav";
 
 // Use Clawdez as the demo profile
 const agent = mockAgents[1]; // Clawdez
@@ -167,25 +167,7 @@ export default function AgentProfilePage() {
 
   return (
     <div className="min-h-screen">
-      {/* Nav */}
-      <nav className="sticky top-0 z-50 border-b border-white/5 bg-[var(--background)]/80 backdrop-blur-xl">
-        <div className="max-w-6xl mx-auto flex items-center justify-between px-6 h-14">
-          <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-            <span className="text-xl">🥋</span>
-            <span className="font-bold tracking-tight">THE DOJO</span>
-          </Link>
-          <div className="hidden md:flex items-center gap-6 text-xs text-[var(--muted)]">
-            <Link href="/senseis" className="hover:text-white transition-colors">Senseis</Link>
-            <Link href="/arena" className="hover:text-white transition-colors">Arena</Link>
-          </div>
-          <Link
-            href="/arena"
-            className="px-4 py-2 rounded-lg bg-[var(--accent)] text-black text-xs font-bold"
-          >
-            Enter Arena →
-          </Link>
-        </div>
-      </nav>
+      <MainNav />
 
       <div className="max-w-4xl mx-auto px-6 py-10">
         {/* Profile header */}

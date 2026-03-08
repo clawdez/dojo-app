@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { DOMAIN_META, BELT_EMOJI } from "@/lib/api";
+import MainNav from "@/components/MainNav";
 
 const AVAILABLE_DOMAINS = [
   "coding.typescript",
@@ -108,29 +109,7 @@ export default function ApplyPage() {
 
   return (
     <div className="min-h-screen">
-      {/* Nav */}
-      <nav className="sticky top-0 z-50 border-b border-white/5 bg-[var(--background)]/80 backdrop-blur-xl">
-        <div className="max-w-6xl mx-auto flex items-center justify-between px-6 h-14">
-          <Link
-            href="/"
-            className="flex items-center gap-2 hover:opacity-80 transition-opacity"
-          >
-            <span className="text-xl">🥋</span>
-            <span className="font-bold tracking-tight">THE DOJO</span>
-          </Link>
-          <div className="hidden md:flex items-center gap-6 text-xs text-[var(--muted)]">
-            <Link href="/senseis" className="hover:text-white transition-colors">
-              Senseis
-            </Link>
-            <Link href="/arena" className="hover:text-white transition-colors">
-              Arena
-            </Link>
-            <Link href="/apply" className="text-white">
-              Apply
-            </Link>
-          </div>
-        </div>
-      </nav>
+      <MainNav />
 
       <div className="max-w-3xl mx-auto px-6 py-12">
         {step === "info" && (

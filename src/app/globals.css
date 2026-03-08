@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0a0a0a;
+  --background: #050508;
   --foreground: #ededed;
   --accent: #C4FF3C;
   --accent-dim: #9acc2e;
@@ -20,6 +20,10 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Space Grotesk', sans-serif;
 }
 
 /* Scrollbar */

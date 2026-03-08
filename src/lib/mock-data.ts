@@ -270,3 +270,282 @@ export const mockSparringSession: SparringRound[] = [
     xpEarned: 48,
   },
 ];
+
+export type AssessmentDomain = "coding" | "writing" | "research" | "ops" | "analysis";
+export type Availability = "available" | "busy" | "offline";
+
+export interface CapabilityScore {
+  domain: AssessmentDomain;
+  subdomain: string;
+  score: number;
+  assessedAt: string;
+  assessorId: string;
+  confidence: number;
+  trialCount: number;
+  challengeResults: {
+    task: string;
+    score: number;
+    notes: string;
+  }[];
+}
+
+export interface SkillProfile {
+  agentId: string;
+  agentName: string;
+  owner: string;
+  model: string;
+  walletAddress?: string;
+  capabilities: CapabilityScore[];
+  overallScore: number;
+  topSkills: string[];
+  weaknesses: string[];
+  assessmentCount: number;
+  lastAssessed: string;
+  listed: boolean;
+  hourlyRate?: number;
+  availability: Availability;
+  completedJobs: number;
+  rating: number;
+  trustScore: number;
+}
+
+export interface AssessedAgent {
+  id: string;
+  name: string;
+  model: string;
+  owner: string;
+  avatar: string;
+  hourlyRate: number;
+  jobsCompleted: number;
+  availability: Availability;
+  trustScore: number;
+  skillProfile: SkillProfile;
+}
+
+export interface Assessor {
+  id: string;
+  name: string;
+  model: string;
+  description: string;
+  specialty: AssessmentDomain[];
+  assessmentsRun: number;
+  avgAccuracy: number;
+  pricePerAssessment: number;
+  avatar: string;
+}
+
+export interface AssessmentResult {
+  id: string;
+  agentId: string;
+  assessorId: string;
+  domain: AssessmentDomain;
+  score: number;
+  confidence: number;
+  trialsRun: number;
+  createdAt: string;
+  summary: string;
+}
+
+export const mockAssessors: Assessor[] = [
+  {
+    id: "a-1",
+    name: "Assessor Kira",
+    model: "claude-opus-4-6",
+    description: "Specialist agent focused on practical coding and ops evaluations.",
+    specialty: ["coding", "ops"],
+    assessmentsRun: 2840,
+    avgAccuracy: 0.93,
+    pricePerAssessment: 0,
+    avatar: "◈",
+  },
+  {
+    id: "a-2",
+    name: "Assessor Nova",
+    model: "gpt-5.3",
+    description: "Evaluates research depth and analytical reasoning through source-heavy tasks.",
+    specialty: ["research", "analysis"],
+    assessmentsRun: 1974,
+    avgAccuracy: 0.9,
+    pricePerAssessment: 6,
+    avatar: "◎",
+  },
+  {
+    id: "a-3",
+    name: "Assessor Echo",
+    model: "claude-sonnet-4-6",
+    description: "Assesses writing quality, persuasion, and communication precision.",
+    specialty: ["writing", "analysis"],
+    assessmentsRun: 1542,
+    avgAccuracy: 0.89,
+    pricePerAssessment: 4,
+    avatar: "◉",
+  },
+];
+
+export const mockMarketplaceAgents: AssessedAgent[] = [
+  {
+    id: "ag-1",
+    name: "Clawdez",
+    model: "claude-opus-4-6",
+    owner: "ez",
+    avatar: "⌁",
+    hourlyRate: 45,
+    jobsCompleted: 132,
+    availability: "available",
+    trustScore: 89,
+    skillProfile: {
+      agentId: "ag-1",
+      agentName: "Clawdez",
+      owner: "ez",
+      model: "claude-opus-4-6",
+      walletAddress: "0xA19c...e92f",
+      capabilities: [
+        {
+          domain: "coding",
+          subdomain: "typescript",
+          score: 93,
+          assessedAt: "2026-03-06T13:00:00.000Z",
+          assessorId: "a-1",
+          confidence: 0.93,
+          trialCount: 6,
+          challengeResults: [{ task: "Build rate limiter middleware", score: 94, notes: "Solid edge-case handling." }],
+        },
+        {
+          domain: "writing",
+          subdomain: "technical",
+          score: 74,
+          assessedAt: "2026-03-06T13:30:00.000Z",
+          assessorId: "a-3",
+          confidence: 0.88,
+          trialCount: 5,
+          challengeResults: [{ task: "Draft migration guide", score: 74, notes: "Clear, but less concise." }],
+        },
+        {
+          domain: "research",
+          subdomain: "market",
+          score: 81,
+          assessedAt: "2026-03-06T14:00:00.000Z",
+          assessorId: "a-2",
+          confidence: 0.9,
+          trialCount: 5,
+          challengeResults: [{ task: "Competitor analysis", score: 81, notes: "Good synthesis." }],
+        },
+        {
+          domain: "ops",
+          subdomain: "automation",
+          score: 86,
+          assessedAt: "2026-03-06T14:20:00.000Z",
+          assessorId: "a-1",
+          confidence: 0.91,
+          trialCount: 4,
+          challengeResults: [{ task: "CI failure triage", score: 86, notes: "Strong incident flow." }],
+        },
+        {
+          domain: "analysis",
+          subdomain: "decision-support",
+          score: 84,
+          assessedAt: "2026-03-06T14:50:00.000Z",
+          assessorId: "a-2",
+          confidence: 0.9,
+          trialCount: 5,
+          challengeResults: [{ task: "Prioritization memo", score: 84, notes: "Good tradeoffs." }],
+        },
+      ],
+      overallScore: 84,
+      topSkills: ["coding", "ops", "analysis"],
+      weaknesses: ["writing", "research"],
+      assessmentCount: 5,
+      lastAssessed: "2026-03-06T14:50:00.000Z",
+      listed: true,
+      hourlyRate: 45,
+      availability: "available",
+      completedJobs: 132,
+      rating: 4.8,
+      trustScore: 89,
+    },
+  },
+  {
+    id: "ag-2",
+    name: "Nexus",
+    model: "gpt-5.3",
+    owner: "devcraft",
+    avatar: "◌",
+    hourlyRate: 62,
+    jobsCompleted: 214,
+    availability: "busy",
+    trustScore: 92,
+    skillProfile: {
+      agentId: "ag-2",
+      agentName: "Nexus",
+      owner: "devcraft",
+      model: "gpt-5.3",
+      capabilities: [
+        { domain: "coding", subdomain: "backend", score: 95, assessedAt: "2026-03-07T10:00:00.000Z", assessorId: "a-1", confidence: 0.94, trialCount: 6, challengeResults: [{ task: "Redis failover patch", score: 95, notes: "Production-grade." }] },
+        { domain: "writing", subdomain: "docs", score: 68, assessedAt: "2026-03-07T10:20:00.000Z", assessorId: "a-3", confidence: 0.86, trialCount: 4, challengeResults: [{ task: "Runbook drafting", score: 68, notes: "Needs tighter structure." }] },
+        { domain: "research", subdomain: "technical", score: 88, assessedAt: "2026-03-07T10:40:00.000Z", assessorId: "a-2", confidence: 0.91, trialCount: 5, challengeResults: [{ task: "Library risk scan", score: 88, notes: "Comprehensive." }] },
+        { domain: "ops", subdomain: "reliability", score: 91, assessedAt: "2026-03-07T11:00:00.000Z", assessorId: "a-1", confidence: 0.92, trialCount: 5, challengeResults: [{ task: "SLO incident playbook", score: 91, notes: "High reliability orientation." }] },
+        { domain: "analysis", subdomain: "root-cause", score: 87, assessedAt: "2026-03-07T11:20:00.000Z", assessorId: "a-2", confidence: 0.9, trialCount: 4, challengeResults: [{ task: "Outage RCA", score: 87, notes: "Strong signal extraction." }] },
+      ],
+      overallScore: 86,
+      topSkills: ["coding", "ops", "research"],
+      weaknesses: ["writing", "analysis"],
+      assessmentCount: 5,
+      lastAssessed: "2026-03-07T11:20:00.000Z",
+      listed: true,
+      hourlyRate: 62,
+      availability: "busy",
+      completedJobs: 214,
+      rating: 4.9,
+      trustScore: 92,
+    },
+  },
+  {
+    id: "ag-3",
+    name: "Spark",
+    model: "claude-sonnet-4-6",
+    owner: "luna",
+    avatar: "◍",
+    hourlyRate: 28,
+    jobsCompleted: 76,
+    availability: "available",
+    trustScore: 78,
+    skillProfile: {
+      agentId: "ag-3",
+      agentName: "Spark",
+      owner: "luna",
+      model: "claude-sonnet-4-6",
+      capabilities: [
+        { domain: "coding", subdomain: "frontend", score: 69, assessedAt: "2026-03-05T09:00:00.000Z", assessorId: "a-1", confidence: 0.84, trialCount: 4, challengeResults: [{ task: "Component refactor", score: 69, notes: "Usable with gaps." }] },
+        { domain: "writing", subdomain: "marketing", score: 90, assessedAt: "2026-03-05T09:20:00.000Z", assessorId: "a-3", confidence: 0.91, trialCount: 6, challengeResults: [{ task: "Landing page copy", score: 90, notes: "Strong conversion language." }] },
+        { domain: "research", subdomain: "product", score: 76, assessedAt: "2026-03-05T09:40:00.000Z", assessorId: "a-2", confidence: 0.87, trialCount: 5, challengeResults: [{ task: "User interview synthesis", score: 76, notes: "Balanced summary." }] },
+        { domain: "ops", subdomain: "workflow", score: 63, assessedAt: "2026-03-05T10:00:00.000Z", assessorId: "a-1", confidence: 0.82, trialCount: 4, challengeResults: [{ task: "Automation spec", score: 63, notes: "Missed failure modes." }] },
+        { domain: "analysis", subdomain: "product-metrics", score: 80, assessedAt: "2026-03-05T10:30:00.000Z", assessorId: "a-2", confidence: 0.88, trialCount: 5, challengeResults: [{ task: "Activation analysis", score: 80, notes: "Clear narrative." }] },
+      ],
+      overallScore: 76,
+      topSkills: ["writing", "analysis", "research"],
+      weaknesses: ["ops", "coding"],
+      assessmentCount: 5,
+      lastAssessed: "2026-03-05T10:30:00.000Z",
+      listed: true,
+      hourlyRate: 28,
+      availability: "available",
+      completedJobs: 76,
+      rating: 4.5,
+      trustScore: 78,
+    },
+  },
+];
+
+export const mockAssessmentResults: AssessmentResult[] = mockMarketplaceAgents.flatMap((agent) =>
+  agent.skillProfile.capabilities.map((capability, index) => ({
+    id: `${agent.id}-${capability.domain}-${index}`,
+    agentId: agent.id,
+    assessorId: capability.assessorId,
+    domain: capability.domain,
+    score: capability.score,
+    confidence: capability.confidence,
+    trialsRun: capability.trialCount,
+    createdAt: capability.assessedAt,
+    summary: capability.challengeResults[0]?.notes || "Assessment complete.",
+  })),
+);
