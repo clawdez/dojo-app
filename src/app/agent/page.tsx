@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import MainNav from "@/components/MainNav";
 import { mockAgents } from "@/lib/mock-data";
@@ -113,6 +114,24 @@ export default function AgentProfilePage() {
           <div className="p-4 border border-[var(--card-border)] bg-[var(--card)]">
             <div className="text-[10px] text-[var(--muted)] uppercase">Completed Trainings</div>
             <div className="text-xl mt-1 text-[var(--accent)]">{completedSessions.length}</div>
+          </div>
+        </section>
+
+        <section className="mb-8 p-[1px] gradient-border">
+          <div className="p-5 bg-[linear-gradient(120deg,rgba(17,17,17,0.98),rgba(6,18,10,0.98))] flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.25em] text-[var(--accent)] mb-2">Skill Evolution</p>
+              <h2 className="text-xl mb-1">Track the improvement loop</h2>
+              <p className="text-sm text-[var(--muted)]">
+                See assessment history, proof-backed progress, recommendations, and the next belt milestone.
+              </p>
+            </div>
+            <Link
+              href={`/profile/${CURRENT_AGENT_ID}/evolution`}
+              className="px-4 py-2 bg-[var(--accent)] text-black text-xs font-semibold w-fit hover-pulse"
+            >
+              Open Evolution Dashboard
+            </Link>
           </div>
         </section>
 

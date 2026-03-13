@@ -7,6 +7,8 @@ import {
   type SkillFingerprint,
   type TrialResult,
 } from '@/lib/assessment';
+import { getProofBonusContext } from '@/lib/proof-log';
+import { recordAssessmentSnapshot } from '@/lib/skill-evolution';
 import { requirePayment } from '@/lib/x402';
 
 /**
@@ -59,7 +61,8 @@ export async function POST(request: NextRequest) {
     if (!domainResults[domainKey]) domainResults[domainKey] = [];
 
     for (let trial = 0; trial < trialsPerChallenge; trial++) {
-      const trialResult = await runTrial(challenge, agentEndpoint, trial);
+      const proofContext = getProofBonusContext(agentId, domainKey);
+      const trialResult = await runTrial(challenge, agentEndpoint, trial, proofContext);
       domainResults[domainKey].push(trialResult);
     }
   }
@@ -98,6 +101,19 @@ export async function POST(request: NextRequest) {
 
     totalScore += domainAvg;
     domainCount++;
+
+    const rubricAverages = buildDomainRubricAverages(
+      challenges.filter((challenge) => `${challenge.domain}.${challenge.subdomain}` === domainKey),
+      trials,
+    );
+
+    recordAssessmentSnapshot({
+      agentId,
+      domain: domainKey,
+      assessedAt: fingerprint.assessedAt,
+      challengeResults: challengeBreakdown.map((item) => ({ id: item.challengeId, score: item.avgScore })),
+      rubricScores: rubricAverages,
+    });
   }
 
   fingerprint.overallScore = domainCount > 0
@@ -123,7 +139,8 @@ export async function POST(request: NextRequest) {
 async function runTrial(
   challenge: Challenge,
   agentEndpoint: string,
-  attempt: number
+  attempt: number,
+  proofContext: string[],
 ): Promise<TrialResult> {
   const startTime = Date.now();
 
@@ -142,6 +159,7 @@ async function runTrial(
           subdomain: challenge.subdomain,
           difficulty: challenge.difficulty,
           timeLimit: challenge.timeLimit,
+          proofContext,
         },
       }),
       signal: AbortSignal.timeout((challenge.timeLimit || 120) * 1000),
@@ -186,6 +204,36 @@ async function runTrial(
       latencyMs: Date.now() - startTime,
     };
   }
+}
+
+function buildDomainRubricAverages(
+  challenges: Challenge[],
+  trials: TrialResult[],
+): { criterion: string; score: number }[] {
+  const scoreMap = new Map<string, number[]>();
+  const rubricLookup = new Map<string, string[]>();
+
+  for (const challenge of challenges) {
+    rubricLookup.set(
+      challenge.id,
+      challenge.rubric.map((item) => item.criterion),
+    );
+  }
+
+  for (const trial of trials) {
+    const knownCriteria = new Set(rubricLookup.get(trial.challengeId) ?? []);
+    for (const score of trial.scores) {
+      if (!knownCriteria.has(score.criterion)) continue;
+      const bucket = scoreMap.get(score.criterion) ?? [];
+      bucket.push(score.score);
+      scoreMap.set(score.criterion, bucket);
+    }
+  }
+
+  return [...scoreMap.entries()].map(([criterion, scores]) => ({
+    criterion,
+    score: Math.round((scores.reduce((sum, value) => sum + value, 0) / scores.length) * 100) / 100,
+  }));
 }
 
 /**
