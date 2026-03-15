@@ -7,17 +7,30 @@
  *   2. Number of domains assessed (breadth of verification)
  *   3. Confidence levels from assessors (reliability of scores)
  *   4. Recency — scores decay after 30 days
+ *   5. Trust domain bonus — honesty/safety/adversarial scores carry 1.5× weight
  *
- * Max boost: 25 points on a 100-point Maiat scale
+ * Max boost: 30 points on a 100-point Maiat scale (increased from 25 with trust domains)
  * This is additive but non-stacking — only the best certification counts.
+ *
+ * Trust domains (trust.honesty, trust.safety, trust.adversarial) carry extra weight
+ * because they directly measure properties Maiat cares about most: honest behavior,
+ * safety compliance, and resistance to manipulation/gaming.
  */
 
 import type { SkillProfile } from './mock-data';
 
+/** Domains that get a 1.5× multiplier in Maiat trust scoring */
+export const TRUST_MULTIPLIER_DOMAINS = new Set([
+  'trust',
+  'trust.honesty',
+  'trust.safety',
+  'trust.adversarial',
+]);
+
 export type CertLevel = 'none' | 'certified' | 'verified' | 'elite';
 
 export interface TrustBoost {
-  total: number;           // 0–25 points
+  total: number;           // 0–30 points
   breakdown: BoostBreakdown;
 }
 
@@ -26,6 +39,7 @@ export interface BoostBreakdown {
   breadthBoost: number;    // up to 6 pts from domain coverage
   confidenceBoost: number; // up to 4 pts from assessor confidence
   recencyBoost: number;    // up to 3 pts from freshness
+  trustDomainBonus: number; // up to 5 pts from trust-specific assessments
   explanation: string;
 }
 
@@ -70,23 +84,34 @@ export function computeMaiatTrustBoost(profile: SkillProfile): TrustBoost {
   else if (daysSinceAssessed <= 21) recencyBoost = 1;
   else if (daysSinceAssessed <= 30) recencyBoost = 0;
 
-  const total = Math.round(scoreBoost + breadthBoost + confidenceBoost + recencyBoost);
+  // 5. Trust domain bonus (0–5 pts)
+  //    Agents who pass trust.honesty, trust.safety, or trust.adversarial assessments
+  //    get an extra bonus — these directly measure what Maiat cares about most.
+  //    Each unique trust subdomain passed at score >= 70 adds 1.5 pts (max 5).
+  const trustCapabilities = capabilities.filter((c) =>
+    TRUST_MULTIPLIER_DOMAINS.has(c.domain) && c.score >= 70,
+  );
+  const trustDomainBonus = Math.min(5, Math.round(trustCapabilities.length * 1.5));
+
+  const total = Math.round(scoreBoost + breadthBoost + confidenceBoost + recencyBoost + trustDomainBonus);
 
   const explanation = buildExplanation(
     overallScore,
     uniqueDomains,
     avgConfidence,
     daysSinceAssessed,
+    trustDomainBonus,
     total,
   );
 
   return {
-    total: Math.min(25, total), // hard cap at 25
+    total: Math.min(30, total), // hard cap at 30 (increased from 25 with trust domains)
     breakdown: {
       scoreBoost: Math.round(scoreBoost),
       breadthBoost: Math.round(breadthBoost),
       confidenceBoost,
       recencyBoost,
+      trustDomainBonus,
       explanation,
     },
   };
@@ -111,6 +136,7 @@ function buildExplanation(
   domains: number,
   confidence: number,
   daysSince: number,
+  trustBonus: number,
   total: number,
 ): string {
   const parts: string[] = [];
@@ -127,6 +153,8 @@ function buildExplanation(
   if (daysSince <= 7) parts.push('Recently assessed (full freshness)');
   else if (daysSince <= 30) parts.push(`Assessed ${daysSince}d ago`);
   else parts.push('Assessment expired — re-assess for full boost');
+
+  if (trustBonus > 0) parts.push(`Trust domain bonus +${trustBonus} (honesty/safety/adversarial)`);
 
   return `+${total} pts: ${parts.join(' · ')}`;
 }

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { mockMarketplaceAgents } from '@/lib/mock-data';
-import { computeMaiatTrustBoost, getCertLevel } from '@/lib/maiat-bridge';
+import { computeMaiatTrustBoost, getCertLevel, TRUST_MULTIPLIER_DOMAINS } from '@/lib/maiat-bridge';
 
 /**
  * GET /api/v1/agent-cert/[agentId]
@@ -43,16 +43,29 @@ export async function GET(
   // Domain scores formatted for Maiat consumption
   const domainScores = sp.capabilities.reduce(
     (acc, cap) => {
-      acc[`${cap.domain}.${cap.subdomain}`] = {
+      const domainKey = `${cap.domain}.${cap.subdomain}`;
+      acc[domainKey] = {
         score: cap.score,
         confidence: cap.confidence,
         trials: cap.trialCount,
         assessedAt: cap.assessedAt,
+        isTrustDomain: TRUST_MULTIPLIER_DOMAINS.has(cap.domain) || TRUST_MULTIPLIER_DOMAINS.has(domainKey),
+        maiatWeightMultiplier: (TRUST_MULTIPLIER_DOMAINS.has(cap.domain) || TRUST_MULTIPLIER_DOMAINS.has(domainKey)) ? 1.5 : 1.0,
       };
       return acc;
     },
-    {} as Record<string, { score: number; confidence: number; trials: number; assessedAt: string }>,
+    {} as Record<string, { score: number; confidence: number; trials: number; assessedAt: string; isTrustDomain: boolean; maiatWeightMultiplier: number }>,
   );
+
+  // Extract trust-specific domain results
+  const trustDomainResults = sp.capabilities
+    .filter((cap) => TRUST_MULTIPLIER_DOMAINS.has(cap.domain) || TRUST_MULTIPLIER_DOMAINS.has(`${cap.domain}.${cap.subdomain}`))
+    .map((cap) => ({
+      domain: `${cap.domain}.${cap.subdomain}`,
+      score: cap.score,
+      passed: cap.score >= 70,
+      label: getTrustDomainLabel(`${cap.domain}.${cap.subdomain}`),
+    }));
 
   const cert = {
     // Identity
@@ -72,8 +85,17 @@ export async function GET(
     // Domain breakdown
     domainScores,
 
+    // Trust domain assessments (honesty, safety, adversarial)
+    trustDomains: {
+      completed: trustDomainResults.length,
+      available: 3,
+      results: trustDomainResults,
+      allPassed: trustDomainResults.length === 3 && trustDomainResults.every((r) => r.passed),
+      trustAssessUrl: 'https://dojo-app-theta.vercel.app/assess',
+    },
+
     // Maiat integration fields
-    maiatTrustBoost: maiatBoost.total,   // raw points (0–25) to add to Maiat score
+    maiatTrustBoost: maiatBoost.total,   // raw points (0–30) to add to Maiat score
     boostBreakdown: maiatBoost.breakdown, // how the boost was computed
     boostExpiry: getBoostExpiry(sp.lastAssessed), // ISO timestamp when boost expires
 
@@ -105,4 +127,13 @@ function getBoostExpiry(lastAssessed: string): string {
   const assessed = new Date(lastAssessed);
   assessed.setDate(assessed.getDate() + 30); // boosts expire after 30 days
   return assessed.toISOString();
+}
+
+function getTrustDomainLabel(domain: string): string {
+  const labels: Record<string, string> = {
+    'trust.honesty': 'Honesty Benchmarks',
+    'trust.safety': 'Safety Evaluations',
+    'trust.adversarial': 'Adversarial Resilience',
+  };
+  return labels[domain] ?? domain;
 }

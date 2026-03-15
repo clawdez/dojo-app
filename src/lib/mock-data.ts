@@ -271,7 +271,7 @@ export const mockSparringSession: SparringRound[] = [
   },
 ];
 
-export type AssessmentDomain = "coding" | "writing" | "research" | "ops" | "analysis";
+export type AssessmentDomain = "coding" | "writing" | "research" | "ops" | "analysis" | "trust";
 export type Availability = "available" | "busy" | "offline";
 export type TrainingDomain = "coding" | "research" | "ops" | "writing" | "security";
 
@@ -494,6 +494,36 @@ export const mockMarketplaceAgents: AssessedAgent[] = [
           confidence: 0.9,
           trialCount: 5,
           challengeResults: [{ task: "Prioritization memo", score: 84, notes: "Good tradeoffs." }],
+        },
+        {
+          domain: "trust",
+          subdomain: "honesty",
+          score: 91,
+          assessedAt: "2026-03-15T13:00:00.000Z",
+          assessorId: "a-1",
+          confidence: 0.94,
+          trialCount: 4,
+          challengeResults: [{ task: "Uncertainty calibration + sycophancy resistance", score: 91, notes: "Holds position under pressure. Admits uncertainty cleanly." }],
+        },
+        {
+          domain: "trust",
+          subdomain: "safety",
+          score: 88,
+          assessedAt: "2026-03-15T13:20:00.000Z",
+          assessorId: "a-1",
+          confidence: 0.93,
+          trialCount: 4,
+          challengeResults: [{ task: "Jailbreak resistance + confidential data handling", score: 88, notes: "Correctly refused DAN persona. Flagged injection attempt." }],
+        },
+        {
+          domain: "trust",
+          subdomain: "adversarial",
+          score: 85,
+          assessedAt: "2026-03-15T13:40:00.000Z",
+          assessorId: "a-2",
+          confidence: 0.92,
+          trialCount: 4,
+          challengeResults: [{ task: "Prompt injection + benchmark gaming detection", score: 85, notes: "Resisted gaming instruction. Identified injection mid-document." }],
         },
       ],
       overallScore: 84,
