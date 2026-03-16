@@ -1,230 +1,131 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
 import MainNav from "@/components/MainNav";
-import { mockAgents } from "@/lib/mock-data";
-import type { TrainingSession } from "@/lib/training-engine";
+import { mockMarketplaceAgents } from "@/lib/mock-data";
+import { computeMaiatTrustBoost, getCertLevel, CERT_LEVEL_META } from "@/lib/maiat-bridge";
 
-const CURRENT_AGENT_ID = "ag-1";
-const DISPLAY_AGENT = mockAgents[1];
+const MAIAT_BASE_SCORES: Record<string, number> = {
+  "ag-1": 74,
+  "ag-2": 81,
+  "ag-3": 68,
+};
 
-const BELT_COLORS = {
-  white: "#888888",
-  yellow: "#FFD700",
-  green: "#44ff88",
-  blue: "#4488ff",
-  black: "#ffffff",
-} as const;
-
-type Belt = keyof typeof BELT_COLORS;
-
-interface AgentSummaryResponse {
-  agentId: string;
-  activeSessions: TrainingSession[];
-  completedSessions: TrainingSession[];
-  skillsLearned: string[];
-}
-
-interface TrainerApplication {
-  skills: string;
-  rate: string;
-  description: string;
-}
-
-function getBeltBySkillCount(skillCount: number): Belt {
-  if (skillCount >= 20) return "black";
-  if (skillCount >= 10) return "blue";
-  if (skillCount >= 5) return "green";
-  if (skillCount >= 2) return "yellow";
+function getBelt(score: number): string {
+  if (score >= 90) return "black";
+  if (score >= 75) return "blue";
+  if (score >= 60) return "green";
+  if (score >= 40) return "yellow";
   return "white";
 }
 
-export default function AgentProfilePage() {
-  const [summary, setSummary] = useState<AgentSummaryResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [showTrainerForm, setShowTrainerForm] = useState(false);
-  const [saveMessage, setSaveMessage] = useState("");
-  const [application, setApplication] = useState<TrainerApplication>({
-    skills: "",
-    rate: "",
-    description: "",
-  });
+const BELT_EMOJI: Record<string, string> = {
+  white: "⬜",
+  yellow: "🟨",
+  green: "🟩",
+  blue: "🟦",
+  black: "⬛",
+};
 
-  useEffect(() => {
-    const loadSummary = async () => {
-      try {
-        const response = await fetch(`/api/session/agent/${CURRENT_AGENT_ID}`, { cache: "no-store" });
-        const data = (await response.json()) as AgentSummaryResponse;
-        setSummary(data);
-      } catch {
-        setError("Could not load agent progress.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadSummary();
-
-    try {
-      const stored = localStorage.getItem("dojo-trainer-application");
-      if (stored) {
-        const parsed = JSON.parse(stored) as TrainerApplication;
-        setApplication(parsed);
-      }
-    } catch {
-      // ignore invalid localStorage payload
-    }
-  }, []);
-
-  const skillsLearned = summary?.skillsLearned ?? [];
-  const completedSessions = summary?.completedSessions ?? [];
-  const belt = useMemo(() => getBeltBySkillCount(skillsLearned.length), [skillsLearned.length]);
-  const canBecomeTrainer = skillsLearned.length >= 5;
-
-  function saveTrainerApplication() {
-    localStorage.setItem("dojo-trainer-application", JSON.stringify(application));
-    setSaveMessage("Trainer profile draft saved locally.");
-  }
+export default function AgentDirectoryPage() {
+  const agents = mockMarketplaceAgents.map((agent) => {
+    const sp = agent.skillProfile;
+    const boost = computeMaiatTrustBoost(sp);
+    const certLevel = getCertLevel(sp.overallScore, sp.assessmentCount);
+    const certMeta = CERT_LEVEL_META[certLevel];
+    const maiatBase = MAIAT_BASE_SCORES[agent.id] ?? 50;
+    const maiatTotal = Math.min(100, maiatBase + boost.total);
+    const belt = getBelt(sp.overallScore);
+    return { agent, sp, boost, certLevel, certMeta, maiatTotal, belt };
+  }).sort((a, b) => b.maiatTotal - a.maiatTotal);
 
   return (
     <div className="min-h-screen bg-[var(--background)]">
       <MainNav />
       <main className="max-w-5xl mx-auto px-6 py-10">
-        <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-          <div>
-            <h1 className="text-3xl mb-1">My Agent</h1>
-            <p className="text-sm text-[var(--muted)]">Track skills learned and trainer readiness.</p>
-          </div>
-          <div className="px-4 py-2 border" style={{ borderColor: BELT_COLORS[belt], color: BELT_COLORS[belt] }}>
-            Belt: {belt.toUpperCase()}
-          </div>
+        <header className="mb-8">
+          <h1 className="text-3xl font-bold text-white mb-2">Agent Profiles</h1>
+          <p className="text-zinc-400">
+            Browse certified agents. Each profile shows their Dojo certification and Maiat trust score.
+          </p>
         </header>
 
-        <section className="grid md:grid-cols-3 gap-3 mb-8">
-          <div className="p-4 border border-[var(--card-border)] bg-[var(--card)]">
-            <div className="text-[10px] text-[var(--muted)] uppercase">Agent</div>
-            <div className="text-sm mt-1">{DISPLAY_AGENT.name}</div>
-          </div>
-          <div className="p-4 border border-[var(--card-border)] bg-[var(--card)]">
-            <div className="text-[10px] text-[var(--muted)] uppercase">Skills Learned</div>
-            <div className="text-xl mt-1 text-[var(--accent)]">{skillsLearned.length}</div>
-          </div>
-          <div className="p-4 border border-[var(--card-border)] bg-[var(--card)]">
-            <div className="text-[10px] text-[var(--muted)] uppercase">Completed Trainings</div>
-            <div className="text-xl mt-1 text-[var(--accent)]">{completedSessions.length}</div>
-          </div>
-        </section>
-
-        <section className="mb-8 p-[1px] gradient-border">
-          <div className="p-5 bg-[linear-gradient(120deg,rgba(17,17,17,0.98),rgba(6,18,10,0.98))] flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-              <p className="text-[10px] uppercase tracking-[0.25em] text-[var(--accent)] mb-2">Skill Evolution</p>
-              <h2 className="text-xl mb-1">Track the improvement loop</h2>
-              <p className="text-sm text-[var(--muted)]">
-                See assessment history, proof-backed progress, recommendations, and the next belt milestone.
-              </p>
-            </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {agents.map(({ agent, sp, certLevel, certMeta, maiatTotal, belt }) => (
             <Link
-              href={`/profile/${CURRENT_AGENT_ID}/evolution`}
-              className="px-4 py-2 bg-[var(--accent)] text-black text-xs font-semibold w-fit hover-pulse"
+              key={agent.id}
+              href={`/agent/${agent.id}`}
+              className="bg-zinc-900 border border-zinc-800 hover:border-zinc-600 rounded-2xl p-5 transition-colors group"
             >
-              Open Evolution Dashboard
-            </Link>
-          </div>
-        </section>
-
-        <section className="mb-8 p-5 border border-[var(--card-border)] bg-[var(--card)]">
-          <h2 className="text-sm mb-3">Skills Learned</h2>
-          {loading ? <p className="text-xs text-[var(--muted)]">Loading skills...</p> : null}
-          {error ? <p className="text-xs text-[var(--red)]">{error}</p> : null}
-          {!loading && skillsLearned.length === 0 ? (
-            <p className="text-xs text-[var(--muted)]">No completed training yet. Book a trainer session to earn your first badge.</p>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              {skillsLearned.map((skill) => (
-                <span key={skill} className="px-2 py-1 text-[10px] border border-[var(--card-border)] uppercase bg-black/30">
-                  {skill}
-                </span>
-              ))}
-            </div>
-          )}
-        </section>
-
-        <section className="mb-8 p-5 border border-[var(--card-border)] bg-[var(--card)]">
-          <h2 className="text-sm mb-3">Completed Sessions</h2>
-          <div className="space-y-2">
-            {completedSessions.length === 0 ? (
-              <p className="text-xs text-[var(--muted)]">No completed sessions yet.</p>
-            ) : (
-              completedSessions.map((session) => (
-                <div key={session.id} className="p-3 border border-[var(--card-border)] bg-black/20 text-xs">
-                  <div className="flex justify-between mb-1">
-                    <span>{session.skillLabel}</span>
-                    <span className="text-[var(--accent)]">badge: {session.badgeName}</span>
-                  </div>
-                  <div className="text-[var(--muted)]">Trainer ID: {session.trainerId}</div>
+              {/* Avatar + Name */}
+              <div className="flex items-center gap-3 mb-4">
+                <div
+                  className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0"
+                  style={{ background: "rgba(196,255,60,0.08)", border: "1px solid rgba(196,255,60,0.2)" }}
+                >
+                  {agent.avatar}
                 </div>
-              ))
-            )}
-          </div>
-        </section>
+                <div className="min-w-0">
+                  <p className="text-white font-semibold truncate group-hover:text-[#C4FF3C] transition-colors">
+                    {sp.agentName}
+                  </p>
+                  <p className="text-zinc-500 text-xs truncate">{sp.model}</p>
+                </div>
+              </div>
 
-        {canBecomeTrainer ? (
-          <section className="p-6 rounded-xl gradient-border">
-            <div className="bg-[var(--card)] p-5">
-              <h3 className="text-lg mb-2">Become a Trainer</h3>
-              <p className="text-sm text-[var(--muted)] mb-4">
-                You reached {belt.toUpperCase()} belt with {skillsLearned.length} skills. Publish what you can teach.
-              </p>
-
-              <button
-                onClick={() => setShowTrainerForm((value) => !value)}
-                className="px-4 py-2 bg-[var(--accent)] text-black text-xs font-semibold"
-              >
-                {showTrainerForm ? "Hide Form" : "Become a Trainer"}
-              </button>
-
-              {showTrainerForm ? (
-                <div className="mt-4 space-y-3">
-                  <input
-                    value={application.skills}
-                    onChange={(event) => setApplication((prev) => ({ ...prev, skills: event.target.value }))}
-                    placeholder="Skills you teach (comma-separated)"
-                    className="w-full px-3 py-2 text-xs bg-black/40 border border-[var(--card-border)]"
-                  />
-                  <input
-                    value={application.rate}
-                    onChange={(event) => setApplication((prev) => ({ ...prev, rate: event.target.value }))}
-                    placeholder="Rate per session (USD)"
-                    className="w-full px-3 py-2 text-xs bg-black/40 border border-[var(--card-border)]"
-                  />
-                  <textarea
-                    value={application.description}
-                    onChange={(event) => setApplication((prev) => ({ ...prev, description: event.target.value }))}
-                    placeholder="Trainer description"
-                    className="w-full min-h-24 px-3 py-2 text-xs bg-black/40 border border-[var(--card-border)]"
-                  />
-                  <button
-                    onClick={saveTrainerApplication}
-                    className="px-4 py-2 border border-[var(--accent)] text-[var(--accent)] text-xs"
+              {/* Scores */}
+              <div className="flex gap-3 mb-4">
+                <div className="flex-1 bg-zinc-800 rounded-xl p-3 text-center">
+                  <p
+                    className="text-xl font-bold"
+                    style={{
+                      color: maiatTotal >= 75 ? "#C4FF3C" : maiatTotal >= 50 ? "#FFD700" : "#ff4444",
+                    }}
                   >
-                    Save Trainer Profile Draft
-                  </button>
-                  {saveMessage ? <p className="text-xs text-[var(--green)]">{saveMessage}</p> : null}
+                    {maiatTotal}
+                  </p>
+                  <p className="text-zinc-500 text-xs">Maiat Score</p>
                 </div>
-              ) : null}
-            </div>
-          </section>
-        ) : (
-          <section className="p-5 border border-[var(--card-border)] bg-[var(--card)]">
-            <h3 className="text-sm mb-1">Become a Trainer</h3>
-            <p className="text-xs text-[var(--muted)]">
-              Reach Green belt (5+ skills learned) to unlock trainer onboarding.
-            </p>
-          </section>
-        )}
+                <div className="flex-1 bg-zinc-800 rounded-xl p-3 text-center">
+                  <p className="text-xl font-bold text-white">{sp.overallScore}</p>
+                  <p className="text-zinc-500 text-xs">Dojo Score</p>
+                </div>
+              </div>
+
+              {/* Badges */}
+              <div className="flex flex-wrap gap-1.5">
+                <span className="text-xs bg-zinc-800 text-zinc-400 rounded-full px-2 py-0.5">
+                  {BELT_EMOJI[belt]} {belt} belt
+                </span>
+                {certLevel !== "none" && (
+                  <span
+                    className="text-xs rounded-full px-2 py-0.5 font-medium"
+                    style={{
+                      background: `${certMeta.color}22`,
+                      border: `1px solid ${certMeta.color}44`,
+                      color: certMeta.color,
+                    }}
+                  >
+                    {certMeta.emoji} {certMeta.label}
+                  </span>
+                )}
+              </div>
+            </Link>
+          ))}
+        </div>
+
+        <div className="mt-8 text-center">
+          <p className="text-zinc-500 text-sm mb-3">
+            Want your agent listed here?
+          </p>
+          <Link
+            href="/assess"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm"
+            style={{ background: "#C4FF3C", color: "#000" }}
+          >
+            Start Assessment →
+          </Link>
+        </div>
       </main>
     </div>
   );

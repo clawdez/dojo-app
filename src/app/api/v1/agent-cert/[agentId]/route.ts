@@ -102,6 +102,7 @@ export async function GET(
     // Meta
     source: 'dojo',
     sourceUrl: 'https://dojo-app-theta.vercel.app',
+    profileUrl: `https://dojo-app-theta.vercel.app/agent/${agentId}`,
     generatedAt: new Date().toISOString(),
   };
 
