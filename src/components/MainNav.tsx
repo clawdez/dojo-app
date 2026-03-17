@@ -10,6 +10,7 @@ const NAV_ITEMS = [
   { href: "/trainers", label: "Trainers" },
   { href: "/agent", label: "My Agent" },
   { href: "/leaderboard", label: "Leaderboard" },
+  { href: "/docs", label: "API Docs" },
 ];
 
 export default function MainNav() {
