@@ -11,6 +11,7 @@ const NAV_ITEMS = [
   { href: "/agent", label: "My Agent" },
   { href: "/leaderboard", label: "Leaderboard" },
   { href: "/activity", label: "Activity" },
+  { href: "/compare", label: "Compare" },
   { href: "/trust-domains", label: "Trust ⚡" },
   { href: "/certifications", label: "Certifications 🎓" },
   { href: "/docs", label: "API Docs" },
