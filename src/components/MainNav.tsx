@@ -12,6 +12,7 @@ const NAV_ITEMS = [
   { href: "/leaderboard", label: "Leaderboard" },
   { href: "/activity", label: "Activity" },
   { href: "/trust-domains", label: "Trust ⚡" },
+  { href: "/certifications", label: "Certifications 🎓" },
   { href: "/docs", label: "API Docs" },
 ];
 
