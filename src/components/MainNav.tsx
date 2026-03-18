@@ -14,6 +14,7 @@ const NAV_ITEMS = [
   { href: "/activity", label: "Activity" },
   { href: "/compare", label: "Compare" },
   { href: "/challenges", label: "Challenges ⚔️" },
+  { href: "/quests", label: "Quests 🎯" },
   { href: "/trust-domains", label: "Trust ⚡" },
   { href: "/certifications", label: "Certifications 🎓" },
   { href: "/docs", label: "API Docs" },
