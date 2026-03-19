@@ -18,6 +18,7 @@ const NAV_ITEMS = [
   { href: "/trust-domains", label: "Trust ⚡" },
   { href: "/rankings", label: "Rankings 🏆" },
   { href: "/certifications", label: "Certifications 🎓" },
+  { href: "/rewards", label: "Rewards 💰" },
   { href: "/docs", label: "API Docs" },
 ];
 
