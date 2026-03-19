@@ -22,6 +22,7 @@ const NAV_ITEMS = [
   { href: "/rewards", label: "Rewards 💰" },
   { href: "/store", label: "Store 🛍️" },
   { href: "/analytics", label: "Analytics 📊" },
+  { href: "/notifications", label: "Notifications 🔔" },
   { href: "/docs", label: "API Docs" },
 ];
 
