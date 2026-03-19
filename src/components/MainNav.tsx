@@ -16,6 +16,7 @@ const NAV_ITEMS = [
   { href: "/challenges", label: "Challenges ⚔️" },
   { href: "/quests", label: "Quests 🎯" },
   { href: "/trust-domains", label: "Trust ⚡" },
+  { href: "/rankings", label: "Rankings 🏆" },
   { href: "/certifications", label: "Certifications 🎓" },
   { href: "/docs", label: "API Docs" },
 ];
