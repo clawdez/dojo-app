@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 
 const NAV_ITEMS = [
   { href: "/", label: "Home" },
+  { href: "/dashboard", label: "Dashboard 🎯" },
   { href: "/sessions", label: "Train", showActiveBadge: true },
   { href: "/trainers", label: "Trainers" },
   { href: "/skills", label: "Skills 📚" },
