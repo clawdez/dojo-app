@@ -23,6 +23,7 @@ const NAV_ITEMS = [
   { href: "/store", label: "Store 🛍️" },
   { href: "/analytics", label: "Analytics 📊" },
   { href: "/notifications", label: "Notifications 🔔" },
+  { href: "/tournaments", label: "Tournaments ⚔️🏆" },
   { href: "/docs", label: "API Docs" },
 ];
 
