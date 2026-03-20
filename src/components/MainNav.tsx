@@ -25,6 +25,7 @@ const NAV_ITEMS = [
   { href: "/notifications", label: "Notifications 🔔" },
   { href: "/battles", label: "Battles ⚔️" },
   { href: "/tournaments", label: "Tournaments 🏆" },
+  { href: "/staking", label: "Staking 🏦" },
   { href: "/governance", label: "Governance 🏛️" },
   { href: "/docs", label: "API Docs" },
 ];
