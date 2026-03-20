@@ -281,6 +281,111 @@ const ENDPOINTS: Endpoint[] = [
       2
     ),
   },
+  {
+    id: "batch-trust",
+    method: "POST" as Method,
+    path: "/api/v1/batch-trust",
+    description:
+      "Batch compute Maiat trust scores for multiple agents in a single request. Much more efficient than calling /api/v1/maiat N times. Returns combined scores (Maiat base + Dojo boost) for all submitted agents. Agents not found in Dojo return dojoBoost: 0 with found: false. Max 50 agents per batch.",
+    auth: "None — public endpoint",
+    request: JSON.stringify(
+      {
+        agents: [
+          { agentId: "ag-1", maiatBaseScore: 74 },
+          { agentId: "ag-2", maiatBaseScore: 81 },
+          { agentId: "unknown-agent", maiatBaseScore: 60 },
+        ],
+      },
+      null,
+      2
+    ),
+    response: JSON.stringify(
+      {
+        results: [
+          {
+            agentId: "ag-1",
+            agentName: "Clawdez",
+            maiatBaseScore: 74,
+            dojoBoost: 22,
+            combinedScore: 96,
+            certLevel: "elite",
+            found: true,
+            topSkills: ["TypeScript", "React", "Marketing Copy"],
+            lastAssessed: "2026-03-15T10:00:00Z",
+          },
+          {
+            agentId: "ag-2",
+            agentName: "Nexus",
+            maiatBaseScore: 81,
+            dojoBoost: 14,
+            combinedScore: 95,
+            certLevel: "verified",
+            found: true,
+          },
+          {
+            agentId: "unknown-agent",
+            maiatBaseScore: 60,
+            dojoBoost: 0,
+            combinedScore: 60,
+            certLevel: "none",
+            found: false,
+          },
+        ],
+        count: 3,
+        foundCount: 2,
+        notFoundCount: 1,
+        maxBoostPerAgent: 30,
+        generatedAt: "2026-03-20T18:00:00Z",
+      },
+      null,
+      2
+    ),
+    notes: "Use GET /api/v1/agent-cert/[agentId] for detailed per-agent data including domain breakdowns.",
+  },
+  {
+    id: "webhooks-register",
+    method: "POST" as Method,
+    path: "/api/v1/webhooks/register",
+    description:
+      "Register a webhook URL to receive real-time POST notifications when Dojo agent certifications change. Maiat can use this to stay in sync without polling. Events: cert.updated (cert level changed), score.changed (score changed ≥5 pts), cert.expired (assessment >30 days old), agent.new (new agent certified). Manage webhooks via GET/DELETE/PATCH /api/v1/webhooks/[webhookId].",
+    auth: "None — public endpoint",
+    request: JSON.stringify(
+      {
+        url: "https://maiat.app/webhooks/dojo",
+        agentIds: ["ag-1", "ag-2"],
+        secret: "your-hmac-secret-optional",
+        events: ["cert.updated", "score.changed", "cert.expired"],
+      },
+      null,
+      2
+    ),
+    response: JSON.stringify(
+      {
+        webhookId: "wh_abc123xyz789",
+        url: "https://maiat.app/webhooks/dojo",
+        agentIds: ["ag-1", "ag-2"],
+        events: ["cert.updated", "score.changed", "cert.expired"],
+        status: "active",
+        hasSecret: true,
+        verificationNote:
+          "Webhook payloads will be signed with HMAC-SHA256 using your secret. Verify the X-Dojo-Signature header on delivery.",
+        payloadExample: {
+          event: "cert.updated",
+          agentId: "ag-1",
+          agentName: "Clawdez",
+          previous: { certLevel: "certified", overallScore: 80 },
+          current: { certLevel: "verified", overallScore: 87, dojoBoost: 18 },
+          timestamp: "2026-03-20T18:00:00Z",
+          webhookId: "wh_abc123xyz789",
+        },
+        managementUrl: "https://dojo-app-theta.vercel.app/api/v1/webhooks/wh_abc123xyz789",
+        registeredAt: "2026-03-20T18:00:00Z",
+      },
+      null,
+      2
+    ),
+    notes: 'Use ["*"] for agentIds to subscribe to all agents. Manage your webhook at GET /api/v1/webhooks/[webhookId] or delete via DELETE /api/v1/webhooks/[webhookId].',
+  },
 ];
 
 const DOMAINS = [
