@@ -27,6 +27,7 @@ const NAV_ITEMS = [
   { href: "/tournaments", label: "Tournaments 🏆" },
   { href: "/staking", label: "Staking 🏦" },
   { href: "/governance", label: "Governance 🏛️" },
+  { href: "/network", label: "Network 🕸️" },
   { href: "/docs", label: "API Docs" },
 ];
 
