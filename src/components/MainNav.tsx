@@ -32,6 +32,7 @@ const NAV_ITEMS = [
   { href: "/feed", label: "Feed 📡" },
   { href: "/network", label: "Network 🕸️" },
   { href: "/marketplace", label: "Marketplace 🏪" },
+  { href: "/training-hub", label: "Training Hub ⚔️" },
   { href: "/integrations", label: "Integrations 🔗" },
   { href: "/docs", label: "API Docs" },
 ];
