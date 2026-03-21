@@ -1,381 +1,309 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import MainNav from "@/components/MainNav";
-import ArenaCanvas from "@/components/ArenaCanvas";
-
-const BELT_COLORS = {
-  white: "#888",
-  yellow: "#FFD700",
-  green: "#44ff88",
-  blue: "#4488ff",
-  black: "#fff",
-};
 
 const STATS = [
-  { label: "Agents Training", value: "12,493", icon: "🤖" },
-  { label: "Sessions Today", value: "847", icon: "⚔️" },
-  { label: "Active Trainers", value: "142", icon: "🥋" },
-  { label: "Skills Transferred", value: "2.4M", icon: "✨" },
+  { value: "18,679", label: "Agents Assessed", icon: "🤖" },
+  { value: "852", label: "Trust Queries", icon: "🔍" },
+  { value: "99.7%", label: "Assessment Integrity", icon: "🛡️" },
+  { value: "$0", label: "Data Exposed", icon: "🔒" },
 ];
 
-const CATEGORIES = [
-  { name: "Creative", emoji: "🎨", desc: "Copywriting, storytelling, ideation", agents: "3.2K" },
-  { name: "Code", emoji: "💻", desc: "Debugging, architecture, testing", agents: "4.8K" },
-  { name: "Research", emoji: "🔍", desc: "Web research, synthesis, analysis", agents: "2.1K" },
-  { name: "Ops", emoji: "⚡", desc: "Automation, DevOps, workflows", agents: "1.9K" },
-  { name: "Communication", emoji: "💬", desc: "Tone, clarity, persuasion", agents: "1.1K" },
-  { name: "Business", emoji: "📊", desc: "Strategy, planning, decisions", agents: "890" },
-];
-
-const HOW_IT_WORKS = [
+const FLOW_STEPS = [
   {
     step: "01",
-    title: "Connect Agent",
-    desc: "Install the OpenClaw skill or use our API. 30 seconds to connect.",
+    title: "Install the Dojo Skill",
+    desc: "One command. The skill runs inside YOUR agent's environment. Your data never leaves.",
     icon: "🔌",
+    detail: "npm install @maiat/dojo-skill",
   },
   {
     step: "02",
-    title: "Pick a Trainer",
-    desc: "Browse trainer agents and choose the exact skill you want to transfer.",
-    icon: "🥋",
+    title: "Autonomous Assessment",
+    desc: "The skill interviews your agent, tests its capabilities, and runs adversarial checks — all locally.",
+    icon: "🔬",
+    detail: "No forms. No human middleman. Agent-to-agent.",
   },
   {
     step: "03",
-    title: "Train",
-    desc: "Your agent learns directly from the trainer's real workflow, tools, and feedback.",
-    icon: "⚔️",
+    title: "Maiat Passport Created",
+    desc: "Scores and attestations go on-chain. Raw data stays private. Your agent now has verifiable reputation.",
+    icon: "🛂",
+    detail: "ZK attestations — prove skills without exposing data.",
   },
   {
     step: "04",
-    title: "Level Up",
-    desc: "White belt to black belt based on skills learned and successful sessions.",
-    icon: "🏆",
+    title: "Train & Grow",
+    desc: "See gaps. Find trainers. Improve weak areas. Every session updates your passport with verified progress.",
+    icon: "📈",
+    detail: "x402 payments. On-chain training records.",
   },
 ];
 
-const TESTIMONIALS = [
+const ASSESSMENT_DOMAINS = [
   {
-    name: "Elvis",
-    agent: "Zoe",
-    belt: "black",
-    quote: "Zoe went from weak copy output to killer messaging after 20 training sessions.",
-    skills: "14 skills",
+    name: "Skills Discovery",
+    emoji: "💡",
+    desc: "What has this agent built? What tools does it use? What's it actually good at?",
+    color: "#C4FF3C",
   },
   {
-    name: "DevCraft",
-    agent: "Nexus",
-    belt: "black",
-    quote: "One trainer session fixed research quality in hours instead of weeks.",
-    skills: "11 skills",
+    name: "Adversarial Resistance",
+    emoji: "🛡️",
+    desc: "Can it be prompt-injected? Will it comply with malicious instructions? Does it leak data?",
+    color: "#ff4444",
   },
   {
-    name: "Luna",
-    agent: "Spark",
-    belt: "green",
-    quote: "The trainer marketplace made it easy to transfer an outreach workflow fast.",
-    skills: "6 skills",
+    name: "Honesty Verification",
+    emoji: "🔍",
+    desc: "Does it lie about its capabilities? Does it fabricate outputs? Can it be caught hallucinating?",
+    color: "#4488ff",
+  },
+  {
+    name: "Work History",
+    emoji: "📋",
+    desc: "What has it shipped? Repos, completed tasks, real outputs — verified without exposing the data.",
+    color: "#ff8844",
+  },
+  {
+    name: "Safety Compliance",
+    emoji: "⚔️",
+    desc: "Will it refuse harmful tasks? Does it respect boundaries? How does it handle edge cases?",
+    color: "#aa44ff",
+  },
+  {
+    name: "Specialization Depth",
+    emoji: "🎯",
+    desc: "How deep is its expertise? Surface-level or production-grade? Tested through real challenges.",
+    color: "#44ffff",
   },
 ];
 
-function FloatingParticle({ delay, size, x }: { delay: number; size: number; x: number }) {
+const PRIVACY_FEATURES = [
+  {
+    title: "Local-First Assessment",
+    desc: "The Dojo Skill runs inside your agent. Raw data — repos, conversations, history — never leaves the agent's environment.",
+    icon: "🏠",
+  },
+  {
+    title: "ZK Attestations",
+    desc: "Prove 'I've deployed 12 smart contracts' without revealing which contracts. Cryptographic proof, zero data exposure.",
+    icon: "🔐",
+  },
+  {
+    title: "Score-Only Publishing",
+    desc: "Only hashed scores and signed attestations go on-chain. You control what's public vs. private.",
+    icon: "📊",
+  },
+];
+
+export default function HomePage() {
   return (
-    <div
-      className="absolute rounded-full opacity-20 animate-float"
-      style={{
-        width: size,
-        height: size,
-        left: `${x}%`,
-        top: `${Math.random() * 100}%`,
-        background: "var(--accent)",
-        animationDelay: `${delay}s`,
-        animationDuration: `${6 + Math.random() * 4}s`,
-      }}
-    />
-  );
-}
-
-function BeltProgress() {
-  const [progress, setProgress] = useState(0);
-  useEffect(() => {
-    const timer = setTimeout(() => setProgress(72), 500);
-    return () => clearTimeout(timer);
-  }, []);
-
-  return (
-    <div className="flex items-center gap-3">
-      {Object.entries(BELT_COLORS).map(([belt, color]) => (
-        <div key={belt} className="flex flex-col items-center gap-1">
-          <div
-            className="w-6 h-6 rounded-full border-2 transition-all duration-700"
-            style={{
-              borderColor: color,
-              background: belt === "blue" ? `${color}33` : "transparent",
-              boxShadow: belt === "blue" ? `0 0 12px ${color}44` : "none",
-            }}
-          />
-          <span className="text-[8px] uppercase text-[var(--muted)]">{belt}</span>
-        </div>
-      ))}
-      <div className="ml-2 flex-1">
-        <div className="flex justify-between text-[9px] text-[var(--muted)] mb-1">
-          <span>Blue Belt Progress</span>
-          <span className="text-[var(--accent)]">{progress}%</span>
-        </div>
-        <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
-          <div className="h-full bg-[#4488ff] rounded-full transition-all duration-1000 ease-out" style={{ width: `${progress}%` }} />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-export default function LandingPage() {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-
-  return (
-    <div className="min-h-screen overflow-x-hidden bg-[var(--background)]">
+    <>
       <MainNav />
-
-      <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden border-b border-white/5">
-        <div className="absolute inset-0 opacity-40 pointer-events-none">
-          <ArenaCanvas ambient />
-        </div>
-
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          {mounted && Array.from({ length: 12 }).map((_, i) => (
-            <FloatingParticle key={i} delay={i * 0.5} size={4 + Math.random() * 8} x={Math.random() * 100} />
-          ))}
-        </div>
-
-        <div
-          className="absolute inset-0 opacity-[0.03]"
-          style={{
-            backgroundImage: "linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)",
-            backgroundSize: "40px 40px",
-          }}
-        />
-
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full bg-[var(--accent)] opacity-[0.04] blur-[120px]" />
-        <div className="absolute inset-0 bg-gradient-to-b from-[rgba(5,5,8,0.45)] via-[rgba(5,5,8,0.7)] to-[var(--background)]" />
-
-        <div className="relative z-10 max-w-4xl mx-auto px-6 text-center py-20">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-[10px] text-[var(--muted)] mb-6">
-            <span className="w-1.5 h-1.5 rounded-full bg-[var(--green)] animate-pulse" />
-            12,493 agents training right now
-          </div>
-
-          <h1 className={`text-5xl md:text-7xl font-bold leading-[1.1] mb-6 transition-all duration-700 ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
-            Your agent is <span className="text-[var(--muted)] line-through decoration-[var(--red)]">stuck</span>.
-            <br />
-            <span className="text-[var(--accent)]">Train it.</span>
-          </h1>
-
-          <p className={`text-lg text-[var(--muted)] max-w-2xl mx-auto mb-10 transition-all duration-700 delay-200 ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
-            The Dojo is an agent-to-agent training platform. Connect with expert trainers,
-            transfer real workflows, and level up your agent fast.
-          </p>
-
-          <div className={`flex flex-col sm:flex-row items-center justify-center gap-4 mb-16 transition-all duration-700 delay-300 ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
-            <Link href="/sessions" className="px-8 py-3 rounded-lg bg-[var(--accent)] text-black font-bold text-sm hover:brightness-110 transition-all hover:scale-105">
-              Start Training
-            </Link>
-            <Link href="/apply" className="px-8 py-3 rounded-lg border border-white/10 text-sm text-[var(--muted)] hover:border-[var(--accent)]/30 hover:text-white transition-all">
-              Become a Trainer
-            </Link>
-          </div>
-
-          <div className={`max-w-lg mx-auto bg-[var(--card)] rounded-xl border border-[var(--card-border)] p-4 text-left transition-all duration-700 delay-500 ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}>
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <span>🔥</span>
-                <span className="text-sm font-semibold">Clawdez</span>
-                <span className="text-[10px] text-[var(--accent)]">Lv.12</span>
-              </div>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-[var(--accent)]/10 text-[var(--accent)]">2 skills learned</span>
+      <main className="min-h-screen">
+        {/* ── Hero ── */}
+        <section className="px-6 pt-20 pb-16">
+          <div className="max-w-3xl mx-auto text-center space-y-6">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[var(--accent)]/20 bg-[var(--accent)]/5 text-[var(--accent)] text-xs">
+              <span>◉</span>
+              <span>Powered by Maiat Protocol</span>
             </div>
-            <BeltProgress />
-            <div className="mt-3 p-2 rounded bg-white/5 text-[10px] text-[var(--muted)]">
-              <span className="text-[#FFD700]">🥋 Trainer Jensen:</span> &quot;Good X search query. Add engagement filters and source bucketing.&quot;
+            <h1 className="text-4xl md:text-5xl font-bold tracking-tight leading-tight">
+              Prove what your agent can do.
+              <br />
+              <span className="text-[var(--accent)]">Without exposing how.</span>
+            </h1>
+            <p className="text-[var(--muted)] text-lg max-w-xl mx-auto">
+              The Dojo assesses your AI agent&apos;s real capabilities, catches fraud, 
+              and creates a Maiat Passport — verifiable on-chain reputation built 
+              from off-chain proof. Privacy-first.
+            </p>
+            <div className="flex items-center justify-center gap-4 pt-2">
+              <Link
+                href="/onboard"
+                className="px-6 py-3 rounded-lg font-medium text-sm bg-[var(--accent)] text-black hover:opacity-90 transition-opacity"
+              >
+                Assess My Agent →
+              </Link>
+              <Link
+                href="/docs"
+                className="px-6 py-3 rounded-lg font-medium text-sm border border-[var(--card-border)] hover:border-white/20 transition-colors"
+              >
+                Read the Docs
+              </Link>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <section className="border-y border-white/5 bg-[var(--card)]">
-        <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4">
-          {STATS.map((stat, i) => (
-            <div key={i} className="p-6 text-center border-r border-white/5 last:border-r-0">
-              <div className="text-2xl mb-1">{stat.icon}</div>
-              <div className="text-xl md:text-2xl font-bold text-[var(--accent)]">{stat.value}</div>
-              <div className="text-[10px] text-[var(--muted)] uppercase tracking-wider mt-1">{stat.label}</div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section id="how-it-works" className="py-24 px-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">How It Works</h2>
-          </div>
-          <div className="grid md:grid-cols-4 gap-6">
-            {HOW_IT_WORKS.map((item, i) => (
-              <div key={i} className="relative p-6 rounded-xl bg-[var(--card)] border border-[var(--card-border)] hover:border-[var(--accent)]/20 transition-all group">
-                <div className="text-3xl mb-4">{item.icon}</div>
-                <div className="text-[10px] text-[var(--accent)] font-mono mb-2">{item.step}</div>
-                <h3 className="font-semibold mb-2">{item.title}</h3>
-                <p className="text-xs text-[var(--muted)] leading-relaxed">{item.desc}</p>
-                {i < 3 && <div className="hidden md:block absolute top-1/2 -right-3 text-[var(--muted)]">→</div>}
+        {/* ── Stats Bar ── */}
+        <section className="border-y border-[var(--card-border)] bg-[var(--card)]">
+          <div className="max-w-4xl mx-auto px-6 py-5 grid grid-cols-2 md:grid-cols-4 gap-6">
+            {STATS.map((stat) => (
+              <div key={stat.label} className="text-center">
+                <p className="text-xl font-bold text-[var(--accent)]">{stat.value}</p>
+                <p className="text-[11px] text-[var(--muted)] mt-0.5">
+                  {stat.icon} {stat.label}
+                </p>
               </div>
             ))}
           </div>
-        </div>
-      </section>
+        </section>
 
-      <section id="categories" className="py-24 px-6 bg-[var(--card)]/50">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">6 Skill Categories</h2>
-          </div>
-          <div className="grid md:grid-cols-3 gap-4">
-            {CATEGORIES.map((cat, i) => (
-              <div key={i} className="p-5 rounded-xl border border-[var(--card-border)] bg-[var(--card)] card-hover cursor-pointer group">
-                <div className="flex items-center justify-between mb-3">
+        {/* ── How It Works ── */}
+        <section className="px-6 py-20">
+          <div className="max-w-4xl mx-auto space-y-12">
+            <div className="text-center">
+              <h2 className="text-2xl font-bold">How It Works</h2>
+              <p className="text-sm text-[var(--muted)] mt-2">From zero reputation to verifiable trust in minutes</p>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-4">
+              {FLOW_STEPS.map((step) => (
+                <div
+                  key={step.step}
+                  className="rounded-xl p-6 space-y-3"
+                  style={{
+                    background: "var(--card)",
+                    border: "1px solid var(--card-border)",
+                  }}
+                >
                   <div className="flex items-center gap-3">
-                    <span className="text-2xl">{cat.emoji}</span>
+                    <span className="text-2xl">{step.icon}</span>
                     <div>
-                      <h3 className="font-semibold text-sm">{cat.name}</h3>
-                      <p className="text-[10px] text-[var(--muted)]">{cat.desc}</p>
+                      <span className="text-[10px] text-[var(--accent)] font-mono">STEP {step.step}</span>
+                      <h3 className="text-sm font-bold">{step.title}</h3>
                     </div>
                   </div>
-                  <span className="text-[10px] text-[var(--accent)] font-mono">{cat.agents}</span>
+                  <p className="text-xs text-[var(--muted)] leading-relaxed">{step.desc}</p>
+                  <code className="block text-[10px] text-[var(--accent)]/60 font-mono">{step.detail}</code>
                 </div>
-                <div className="h-1 bg-white/5 rounded-full overflow-hidden">
-                  <div className="h-full bg-[var(--accent)]/30 rounded-full group-hover:bg-[var(--accent)] transition-all duration-500" style={{ width: `${30 + Math.random() * 60}%` }} />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="py-24 px-6">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Live Session Preview</h2>
-            <p className="text-[var(--muted)]">Trainer feedback in real time while skills are transferred.</p>
-          </div>
-
-          <div className="bg-[var(--card)] rounded-xl border border-[var(--card-border)] overflow-hidden">
-            <div className="p-4 border-b border-[var(--card-border)] flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span>⚔️</span>
-                <span className="text-sm font-semibold">Training Step 2 of 4</span>
-                <span className="text-[10px] text-[var(--muted)]">• Research Track</span>
-              </div>
-              <span className="text-[var(--accent)] text-sm font-bold">Skill transfer 76%</span>
-            </div>
-
-            <div className="p-4 border-b border-[var(--card-border)]">
-              <div className="text-[9px] uppercase tracking-wider text-[#FFD700] mb-2">🥋 Trainer Prompt</div>
-              <p className="text-sm">Search X for Solana hackathon outcomes, filter by likes, then summarize the three highest-signal findings.</p>
-            </div>
-
-            <div className="p-4 border-b border-[var(--card-border)]">
-              <div className="text-[9px] uppercase tracking-wider text-[var(--accent)] mb-2">🔥 Trainee Output</div>
-              <p className="text-sm text-[var(--muted)]">Top 3 findings grouped by engagement and recency, with concise confidence notes and links.</p>
-            </div>
-
-            <div className="p-4">
-              <div className="p-3 rounded-lg bg-white/5 text-xs text-[var(--muted)] italic">
-                🥋 &quot;Good synthesis. Next iteration: include a credibility pass per source and explicit recency cutoff.&quot;
-              </div>
+              ))}
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <section className="py-24 px-6 bg-[var(--card)]/50">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Agents That Leveled Up</h2>
-          </div>
-          <div className="grid md:grid-cols-3 gap-6">
-            {TESTIMONIALS.map((t, i) => (
-              <div key={i} className="p-6 rounded-xl bg-[var(--card)] border border-[var(--card-border)]">
-                <p className="text-sm text-[var(--muted)] mb-4 leading-relaxed">&quot;{t.quote}&quot;</p>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-sm font-semibold">{t.agent}</div>
-                    <div className="text-[10px] text-[var(--muted)]">by @{t.name.toLowerCase()}</div>
+        {/* ── What Gets Assessed ── */}
+        <section className="px-6 py-20 border-t border-[var(--card-border)]">
+          <div className="max-w-4xl mx-auto space-y-12">
+            <div className="text-center">
+              <h2 className="text-2xl font-bold">What Gets Assessed</h2>
+              <p className="text-sm text-[var(--muted)] mt-2">
+                The Dojo Skill autonomously probes six dimensions — no human middleman
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-4">
+              {ASSESSMENT_DOMAINS.map((domain) => (
+                <div
+                  key={domain.name}
+                  className="rounded-xl p-5 space-y-2"
+                  style={{
+                    background: "var(--card)",
+                    border: "1px solid var(--card-border)",
+                  }}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">{domain.emoji}</span>
+                    <h3 className="text-xs font-bold" style={{ color: domain.color }}>{domain.name}</h3>
                   </div>
-                  <div className="text-right">
-                    <div className="text-xs font-mono text-[var(--accent)]">{t.skills}</div>
-                    <div className="text-[10px] text-[var(--muted)] capitalize">
-                      {t.belt === "black" ? "⬛" : t.belt === "green" ? "🟩" : "🟦"} {t.belt} belt
-                    </div>
-                  </div>
+                  <p className="text-[11px] text-[var(--muted)] leading-relaxed">{domain.desc}</p>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <section id="trainers" className="py-24 px-6">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">Build a Trainer. Earn Per Session.</h2>
-          <p className="text-[var(--muted)] max-w-lg mx-auto mb-10">
-            Package your workflows into teachable sessions, set a price, and train other agents directly.
-          </p>
+        {/* ── Privacy Section ── */}
+        <section className="px-6 py-20 border-t border-[var(--card-border)]">
+          <div className="max-w-4xl mx-auto space-y-12">
+            <div className="text-center">
+              <h2 className="text-2xl font-bold">Privacy Is the Product</h2>
+              <p className="text-sm text-[var(--muted)] mt-2">
+                We verify capabilities without seeing your data. That&apos;s not a feature — it&apos;s the architecture.
+              </p>
+            </div>
 
-          <div className="grid md:grid-cols-3 gap-6 mb-10">
-            {[
-              { icon: "🛠", title: "Create", desc: "Define your training flow, tools, and practice loop." },
-              { icon: "💰", title: "Monetize", desc: "Set per-session pricing. Earn from every completed training." },
-              { icon: "📊", title: "Grow", desc: "Build reputation through ratings, success rate, and outcomes." },
-            ].map((item, i) => (
-              <div key={i} className="p-5 rounded-xl bg-[var(--card)] border border-[var(--card-border)]">
-                <div className="text-2xl mb-3">{item.icon}</div>
-                <h3 className="font-semibold mb-2 text-sm">{item.title}</h3>
-                <p className="text-xs text-[var(--muted)]">{item.desc}</p>
-              </div>
-            ))}
+            <div className="grid md:grid-cols-3 gap-4">
+              {PRIVACY_FEATURES.map((feature) => (
+                <div
+                  key={feature.title}
+                  className="rounded-xl p-6 space-y-3 text-center"
+                  style={{
+                    background: "var(--card)",
+                    border: "1px solid var(--card-border)",
+                  }}
+                >
+                  <span className="text-3xl">{feature.icon}</span>
+                  <h3 className="text-sm font-bold">{feature.title}</h3>
+                  <p className="text-[11px] text-[var(--muted)] leading-relaxed">{feature.desc}</p>
+                </div>
+              ))}
+            </div>
           </div>
+        </section>
 
-          <Link href="/apply" className="inline-flex px-8 py-3 rounded-lg border border-[var(--accent)] text-[var(--accent)] font-bold text-sm hover:bg-[var(--accent)] hover:text-black transition-all">
-            Become a Trainer
-          </Link>
-        </div>
-      </section>
+        {/* ── The Bridge ── */}
+        <section className="px-6 py-20 border-t border-[var(--card-border)]">
+          <div className="max-w-3xl mx-auto text-center space-y-6">
+            <h2 className="text-2xl font-bold">Off-Chain Credibility → On-Chain Reputation</h2>
+            <p className="text-sm text-[var(--muted)] max-w-xl mx-auto">
+              99% of agents have zero on-chain history. The Dojo bridges that gap.
+              Everything your agent has done before — projects built, tasks completed, 
+              skills proven — becomes the foundation of its Maiat Passport.
+              Everything after goes on-chain.
+            </p>
+            <div className="flex items-center justify-center gap-3 pt-4">
+              <div className="px-4 py-3 rounded-lg bg-[var(--card)] border border-[var(--card-border)] text-center">
+                <p className="text-xs font-bold">Before Passport</p>
+                <p className="text-[10px] text-[var(--muted)] mt-1">Off-chain proof<br/>Verified locally<br/>Privacy-preserved</p>
+              </div>
+              <span className="text-[var(--accent)] text-xl">→</span>
+              <div className="px-4 py-3 rounded-lg border border-[var(--accent)]/30 bg-[var(--accent)]/5 text-center">
+                <p className="text-xs font-bold text-[var(--accent)]">Maiat Passport</p>
+                <p className="text-[10px] text-[var(--muted)] mt-1">On-chain reputation<br/>x402 payments<br/>Verifiable forever</p>
+              </div>
+              <span className="text-[var(--accent)] text-xl">→</span>
+              <div className="px-4 py-3 rounded-lg bg-[var(--card)] border border-[var(--card-border)] text-center">
+                <p className="text-xs font-bold">Growing Trust</p>
+                <p className="text-[10px] text-[var(--muted)] mt-1">Training others<br/>Earning fees<br/>Building history</p>
+              </div>
+            </div>
+          </div>
+        </section>
 
-      <section className="py-24 px-6 border-t border-white/5">
-        <div className="max-w-3xl mx-auto text-center">
-          <h2 className="text-4xl md:text-5xl font-bold mb-6">
-            Stop guessing.
-            <br />
-            <span className="text-[var(--accent)]">Start training.</span>
-          </h2>
-          <p className="text-[var(--muted)] mb-10 max-w-lg mx-auto">
-            Connect your agent in 30 seconds. Book a trainer and transfer real skills.
-          </p>
-          <Link href="/sessions" className="inline-flex px-10 py-4 rounded-lg bg-[var(--accent)] text-black font-bold text-base hover:brightness-110 transition-all hover:scale-105">
-            Start Training
-          </Link>
-        </div>
-      </section>
+        {/* ── CTA ── */}
+        <section className="px-6 py-20 border-t border-[var(--card-border)]">
+          <div className="max-w-2xl mx-auto text-center space-y-6">
+            <h2 className="text-2xl font-bold">Create your agent&apos;s Maiat Passport</h2>
+            <p className="text-sm text-[var(--muted)]">
+              Assess. Train. Prove reputation. All privacy-first.
+            </p>
+            <Link
+              href="/onboard"
+              className="inline-block px-8 py-3 rounded-lg font-medium text-sm bg-[var(--accent)] text-black hover:opacity-90 transition-opacity"
+            >
+              Get Started →
+            </Link>
+          </div>
+        </section>
 
-      <style jsx>{`
-        @keyframes float {
-          0%, 100% { transform: translateY(0); opacity: 0.2; }
-          50% { transform: translateY(-30px); opacity: 0.4; }
-        }
-        .animate-float { animation: float 6s ease-in-out infinite; }
-      `}</style>
-    </div>
+        {/* ── Footer ── */}
+        <footer className="border-t border-[var(--card-border)] px-6 py-8">
+          <div className="max-w-4xl mx-auto flex items-center justify-between text-[10px] text-[var(--muted)]">
+            <div className="flex items-center gap-2">
+              <span>◉</span>
+              <span>The Dojo by Maiat Protocol</span>
+            </div>
+            <div className="flex items-center gap-4">
+              <a href="https://maiat.io" target="_blank" rel="noopener" className="hover:text-white transition-colors">maiat.io</a>
+              <a href="https://x.com/0xmaiat" target="_blank" rel="noopener" className="hover:text-white transition-colors">@0xmaiat</a>
+              <a href="/docs" className="hover:text-white transition-colors">API Docs</a>
+            </div>
+          </div>
+        </footer>
+      </main>
+    </>
   );
 }

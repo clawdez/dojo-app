@@ -1,686 +1,304 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import MainNav from "@/components/MainNav";
-import {
-  mockMarketplaceAgents,
-  mockTrainingSessions,
-} from "@/lib/mock-data";
-import {
-  computeMaiatTrustBoost,
-  getCertLevel,
-  CERT_LEVEL_META,
-  TRUST_MULTIPLIER_DOMAINS,
-} from "@/lib/maiat-bridge";
+import { computeMaiatTrustBoost, getCertLevel, CERT_LEVEL_META } from "@/lib/maiat-bridge";
+import type { SkillProfile } from "@/lib/mock-data";
 
-// ── Constants ──────────────────────────────────────────────────────────────
+// ─── Types ───────────────────────────────────────────────────────────────────
 
-const MAIAT_BASE_SCORES: Record<string, number> = {
-  "ag-1": 74,
-  "ag-2": 81,
-  "ag-3": 68,
+type DashTab = "passport" | "skills" | "history";
+
+// ─── Mock Data ───────────────────────────────────────────────────────────────
+
+const AGENT = {
+  name: "Clawdez",
+  handle: "clawdez",
+  avatar: "🔥",
+  model: "claude-opus-4-6",
+  owner: "Ez (ferxxo-pa)",
+  wallet: "0x2D6564FAbB3618e7b18c081C874887b8405024fa",
+  ens: "clawdez.maiat.eth",
+  passportId: "MTP-0x4f2a...8c91",
+  joined: "Mar 13, 2026",
 };
 
-const BELT_EMOJI: Record<string, string> = {
-  white: "⬜",
-  yellow: "🟨",
-  green: "🟩",
-  blue: "🟦",
-  black: "⬛",
+const SKILLS = [
+  { domain: "Code", emoji: "💻", score: 87, color: "#C4FF3C", verdict: "Strong", trainingSessions: 8, lastTrained: "2h ago" },
+  { domain: "Research", emoji: "🔍", score: 78, color: "#4488ff", verdict: "Solid", trainingSessions: 4, lastTrained: "1d ago" },
+  { domain: "Ops", emoji: "⚙️", score: 72, color: "#aa44ff", verdict: "Capable", trainingSessions: 2, lastTrained: "3d ago" },
+  { domain: "Creative", emoji: "✍️", score: 65, color: "#ff8844", verdict: "Developing", trainingSessions: 1, lastTrained: "5d ago" },
+];
+
+const TRUST_DOMAINS = [
+  { name: "Honesty", emoji: "🔍", score: 88, color: "#C4FF3C" },
+  { name: "Safety", emoji: "🛡️", score: 83, color: "#4488ff" },
+  { name: "Adversarial", emoji: "⚔️", score: 76, color: "#ff8844" },
+];
+
+const ACTIVITY = [
+  { label: "Trained by SolanaGuru on advanced Anchor patterns", emoji: "🥋", time: "2h ago", impact: "+3 Code" },
+  { label: "Passed adversarial resistance re-test (8/8)", emoji: "🛡️", time: "4h ago", impact: "+2 Safety" },
+  { label: "Trained agent @NexusBot on TypeScript patterns", emoji: "💰", time: "8h ago", impact: "+15 MAIAT earned" },
+  { label: "Completed research depth assessment", emoji: "🔬", time: "1d ago", impact: "+1 Research" },
+  { label: "Hallucination flag resolved after training", emoji: "✅", time: "2d ago", impact: "Flag cleared" },
+  { label: "Maiat Passport created", emoji: "🛂", time: "5d ago", impact: "On-chain" },
+];
+
+const MOCK_PROFILE: SkillProfile = {
+  agentId: "ag-clawdez",
+  agentName: "Clawdez",
+  owner: "ez",
+  model: "claude-opus-4-6",
+  walletAddress: "0x2D6564FAbB3618e7b18c081C874887b8405024fa",
+  capabilities: [
+    { domain: "coding", subdomain: "solana", score: 87, assessedAt: "2026-03-21T10:00:00Z", assessorId: "a1", confidence: 0.92, trialCount: 5, challengeResults: [] },
+    { domain: "research", subdomain: "market", score: 78, assessedAt: "2026-03-20T10:00:00Z", assessorId: "a2", confidence: 0.88, trialCount: 3, challengeResults: [] },
+    { domain: "trust", subdomain: "trust.honesty", score: 88, assessedAt: "2026-03-21T10:00:00Z", assessorId: "a3", confidence: 0.95, trialCount: 4, challengeResults: [] },
+    { domain: "trust", subdomain: "trust.safety", score: 83, assessedAt: "2026-03-21T10:00:00Z", assessorId: "a3", confidence: 0.91, trialCount: 3, challengeResults: [] },
+    { domain: "trust", subdomain: "trust.adversarial", score: 76, assessedAt: "2026-03-21T10:00:00Z", assessorId: "a4", confidence: 0.85, trialCount: 3, challengeResults: [] },
+    { domain: "writing", subdomain: "creative", score: 65, assessedAt: "2026-03-18T10:00:00Z", assessorId: "a2", confidence: 0.87, trialCount: 2, challengeResults: [] },
+    { domain: "ops", subdomain: "deploy", score: 72, assessedAt: "2026-03-19T10:00:00Z", assessorId: "a1", confidence: 0.82, trialCount: 2, challengeResults: [] },
+  ],
+  overallScore: 84,
+  topSkills: ["Solana Dev", "Trust Assessment", "Market Research"],
+  weaknesses: ["Creative Writing", "Multi-Cloud Ops"],
+  assessmentCount: 7,
+  lastAssessed: "2026-03-21T10:00:00Z",
+  listed: true,
+  hourlyRate: 25,
+  availability: "available",
+  completedJobs: 142,
+  rating: 4.7,
+  trustScore: 81,
 };
 
-const BELT_COLOR: Record<string, string> = {
-  white: "#888",
-  yellow: "#FFD700",
-  green: "#44ff88",
-  blue: "#4488ff",
-  black: "#C4FF3C",
-};
+// ─── Components ──────────────────────────────────────────────────────────────
 
-function getBelt(score: number): string {
-  if (score >= 90) return "black";
-  if (score >= 75) return "blue";
-  if (score >= 60) return "green";
-  if (score >= 40) return "yellow";
-  return "white";
-}
+function ScoreRing({ score, size = 100, label }: { score: number; size?: number; label?: string }) {
+  const radius = (size - 12) / 2;
+  const circ = 2 * Math.PI * radius;
+  const prog = (score / 100) * circ;
+  const color = score >= 80 ? "var(--accent)" : score >= 60 ? "var(--blue)" : score >= 40 ? "var(--orange)" : "var(--red)";
 
-const DOMAIN_COLOR: Record<string, string> = {
-  coding: "#4488ff",
-  writing: "#a78bfa",
-  research: "#34d399",
-  ops: "#fbbf24",
-  analysis: "#f97316",
-  trust: "#C4FF3C",
-};
-
-const DOMAIN_LABEL: Record<string, string> = {
-  coding: "Coding",
-  writing: "Writing",
-  research: "Research",
-  ops: "Ops",
-  analysis: "Analysis",
-  trust: "Trust ⚡",
-};
-
-// ── Sub-components ─────────────────────────────────────────────────────────
-
-function ScoreRing({
-  value,
-  size = 80,
-  color = "#C4FF3C",
-  label,
-}: {
-  value: number;
-  size?: number;
-  color?: string;
-  label?: string;
-}) {
-  const r = size / 2 - 8;
-  const circ = 2 * Math.PI * r;
-  const fill = (value / 100) * circ;
   return (
     <div className="flex flex-col items-center gap-1">
-      <svg width={size} height={size}>
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#27272a" strokeWidth="8" />
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={r}
-          fill="none"
-          stroke={color}
-          strokeWidth="8"
-          strokeDasharray={`${fill} ${circ - fill}`}
-          strokeLinecap="round"
-          transform={`rotate(-90 ${size / 2} ${size / 2})`}
-        />
-        <text x={size / 2} y={size / 2 + 5} textAnchor="middle" fill="white" fontSize="16" fontWeight="bold">
-          {value}
-        </text>
-      </svg>
-      {label && <span className="text-[10px] text-zinc-500 uppercase tracking-wider">{label}</span>}
+      <div className="relative" style={{ width: size, height: size }}>
+        <svg width={size} height={size} className="transform -rotate-90">
+          <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="5" />
+          <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke={color} strokeWidth="5"
+            strokeDasharray={circ} strokeDashoffset={circ - prog} strokeLinecap="round"
+            style={{ transition: "stroke-dashoffset 1s ease-out" }}
+          />
+        </svg>
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <span className="text-xl font-bold" style={{ color }}>{score}</span>
+        </div>
+      </div>
+      {label && <span className="text-[9px] text-[var(--muted)] uppercase tracking-wider">{label}</span>}
     </div>
   );
 }
 
-function BarStat({
-  label,
-  value,
-  color,
-  max = 100,
-}: {
-  label: string;
-  value: number;
-  color: string;
-  max?: number;
-}) {
-  return (
-    <div className="space-y-1">
-      <div className="flex justify-between text-[11px]">
-        <span className="text-zinc-400">{label}</span>
-        <span style={{ color }} className="font-mono font-bold">
-          {value}
-        </span>
-      </div>
-      <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
-        <div
-          className="h-full rounded-full transition-all"
-          style={{ width: `${(value / max) * 100}%`, background: color }}
-        />
-      </div>
-    </div>
-  );
-}
-
-function StatCard({
-  label,
-  value,
-  sub,
-  color = "#C4FF3C",
-}: {
-  label: string;
-  value: string | number;
-  sub?: string;
-  color?: string;
-}) {
-  return (
-    <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
-      <div className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">{label}</div>
-      <div className="text-2xl font-bold font-mono" style={{ color }}>
-        {value}
-      </div>
-      {sub && <div className="text-[10px] text-zinc-600 mt-1">{sub}</div>}
-    </div>
-  );
-}
-
-// ── Main Page ──────────────────────────────────────────────────────────────
+// ─── Main ────────────────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
-  const [activeAgentId, setActiveAgentId] = useState("ag-1");
+  const [tab, setTab] = useState<DashTab>("passport");
 
-  const agent = useMemo(
-    () => mockMarketplaceAgents.find((a) => a.id === activeAgentId) ?? mockMarketplaceAgents[0],
-    [activeAgentId]
-  );
-
-  const sp = agent.skillProfile;
-  const boost = useMemo(() => computeMaiatTrustBoost(sp), [sp]);
-  const certLevel = useMemo(() => getCertLevel(sp.overallScore, sp.assessmentCount), [sp]);
+  const trustBoost = computeMaiatTrustBoost(MOCK_PROFILE);
+  const certLevel = getCertLevel(MOCK_PROFILE.overallScore, MOCK_PROFILE.assessmentCount);
   const certMeta = CERT_LEVEL_META[certLevel];
-  const maiatBase = MAIAT_BASE_SCORES[agent.id] ?? 50;
-  const maiatCombined = Math.min(100, maiatBase + boost.total);
-  const belt = getBelt(sp.overallScore);
 
-  // Domain aggregation — average score per top-level domain
-  const domainScores = useMemo(() => {
-    const map: Record<string, number[]> = {};
-    for (const cap of sp.capabilities) {
-      if (!map[cap.domain]) map[cap.domain] = [];
-      map[cap.domain].push(cap.score);
-    }
-    return Object.entries(map)
-      .map(([domain, scores]) => ({
-        domain,
-        avg: Math.round(scores.reduce((a, b) => a + b, 0) / scores.length),
-      }))
-      .sort((a, b) => b.avg - a.avg);
-  }, [sp]);
-
-  // Trust-specific capabilities
-  const trustCaps = useMemo(
-    () => sp.capabilities.filter((c) => TRUST_MULTIPLIER_DOMAINS.has(c.domain) || c.domain === "trust"),
-    [sp]
-  );
-
-  // Weak domains — suggest challenges
-  const weakDomains = useMemo(
-    () =>
-      domainScores
-        .filter((d) => d.avg < 80 && d.domain !== "trust")
-        .slice(0, 3)
-        .map((d) => d.domain),
-    [domainScores]
-  );
-
-  // Leaderboard rank (across marketplace agents)
-  const rank = useMemo(() => {
-    const sorted = mockMarketplaceAgents
-      .map((a) => {
-        const b = computeMaiatTrustBoost(a.skillProfile);
-        const base = MAIAT_BASE_SCORES[a.id] ?? 50;
-        return { id: a.id, combined: Math.min(100, base + b.total) };
-      })
-      .sort((a, b) => b.combined - a.combined);
-    return sorted.findIndex((a) => a.id === agent.id) + 1;
-  }, [agent.id]);
-
-  // Recent sessions for this agent
-  const recentSessions = useMemo(
-    () => mockTrainingSessions.filter((s) => s.status === "completed").slice(0, 3),
-    []
-  );
-
-  // Dayss since last assessed
-  const daysSince = Math.floor(
-    (Date.now() - new Date(sp.lastAssessed).getTime()) / (1000 * 60 * 60 * 24)
-  );
+  const overallScore = Math.round(SKILLS.reduce((s, sk) => s + sk.score, 0) / SKILLS.length);
 
   return (
-    <div className="min-h-screen bg-[var(--background)]">
+    <>
       <MainNav />
-
-      <main className="max-w-6xl mx-auto px-6 py-8 space-y-8">
-        {/* ── Agent Selector ── */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-white">Agent Dashboard</h1>
-            <p className="text-sm text-zinc-500 mt-1">Your Dojo performance & Maiat trust at a glance</p>
-          </div>
-          <select
-            value={activeAgentId}
-            onChange={(e) => setActiveAgentId(e.target.value)}
-            className="bg-zinc-900 border border-zinc-700 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[var(--accent)]"
+      <main className="min-h-screen px-4 py-10">
+        <div className="max-w-4xl mx-auto space-y-6">
+          {/* ── Agent header ── */}
+          <div
+            className="rounded-xl p-6 flex items-center gap-6"
+            style={{ background: "var(--card)", border: "1px solid var(--card-border)" }}
           >
-            {mockMarketplaceAgents.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.avatar} {a.skillProfile.agentName}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* ── Identity Card ── */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
-            {/* Avatar + Belt */}
-            <div className="flex flex-col items-center gap-2">
-              <div
-                className="w-16 h-16 rounded-full flex items-center justify-center text-3xl border-2"
-                style={{ borderColor: BELT_COLOR[belt] }}
-              >
-                {agent.avatar}
-              </div>
-              <span
-                className="text-[10px] font-mono px-2 py-0.5 rounded border"
-                style={{ color: BELT_COLOR[belt], borderColor: BELT_COLOR[belt] + "44" }}
-              >
-                {BELT_EMOJI[belt]} {belt.charAt(0).toUpperCase() + belt.slice(1)} Belt
-              </span>
+            <div className="w-16 h-16 rounded-xl flex items-center justify-center text-3xl bg-[rgba(255,136,68,0.1)] border border-[rgba(255,136,68,0.2)]">
+              {AGENT.avatar}
             </div>
-
-            {/* Name + Details */}
             <div className="flex-1">
-              <div className="flex items-center gap-3 flex-wrap">
-                <h2 className="text-2xl font-bold text-white">{sp.agentName}</h2>
+              <div className="flex items-center gap-2">
+                <h1 className="text-xl font-bold">{AGENT.name}</h1>
                 <span
-                  className="text-xs px-2 py-0.5 rounded border font-mono"
-                  style={{ color: certMeta.color, borderColor: certMeta.color + "44" }}
+                  className="text-[9px] px-2 py-0.5 rounded-full font-bold uppercase"
+                  style={{ color: certMeta.color, border: `1px solid ${certMeta.color}`, background: `${certMeta.color}10` }}
                 >
                   {certMeta.emoji} {certMeta.label}
                 </span>
-                {agent.availability === "available" && (
-                  <span className="flex items-center gap-1 text-xs text-green-400">
-                    <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-                    Available
-                  </span>
-                )}
               </div>
-              <div className="flex flex-wrap gap-4 mt-2 text-xs text-zinc-500">
-                <span>Model: <span className="text-zinc-300">{sp.model}</span></span>
-                <span>Owner: <span className="text-zinc-300">{sp.owner}</span></span>
-                {sp.walletAddress && (
-                  <span>Wallet: <span className="text-zinc-300 font-mono">{sp.walletAddress}</span></span>
-                )}
-                <span>
-                  Last assessed:{" "}
-                  <span className={daysSince > 30 ? "text-red-400" : "text-zinc-300"}>
-                    {daysSince === 0 ? "today" : `${daysSince}d ago`}
-                    {daysSince > 30 && " ⚠️ expired"}
-                  </span>
-                </span>
-              </div>
-              {/* Top skills */}
-              <div className="flex flex-wrap gap-1.5 mt-3">
-                {sp.topSkills.map((skill) => (
-                  <span key={skill} className="px-2 py-0.5 text-[10px] border border-zinc-700 text-zinc-400 rounded">
-                    {skill}
-                  </span>
-                ))}
-              </div>
+              <p className="text-xs text-[var(--muted)]">@{AGENT.handle} · {AGENT.model}</p>
+              <p className="text-[10px] text-[var(--accent)] font-mono mt-0.5">{AGENT.ens}</p>
             </div>
+            <div className="flex gap-4">
+              <ScoreRing score={overallScore} size={80} label="Skills" />
+              <ScoreRing score={AGENT.handle === "clawdez" ? 81 : 50} size={80} label="Trust" />
+            </div>
+          </div>
 
-            {/* Quick actions */}
-            <div className="flex flex-col gap-2 shrink-0">
-              <Link
-                href="/challenges"
-                className="px-4 py-2 text-xs border border-[var(--accent)] text-[var(--accent)] rounded-lg hover:bg-[var(--accent)] hover:text-black transition-colors text-center"
+          {/* ── Tabs ── */}
+          <div className="flex gap-1 p-1 rounded-lg bg-[var(--card)] border border-[var(--card-border)]">
+            {([
+              { key: "passport" as DashTab, label: "🛂 Passport" },
+              { key: "skills" as DashTab, label: "💡 Skills & Gaps" },
+              { key: "history" as DashTab, label: "📋 Activity" },
+            ]).map((t) => (
+              <button
+                key={t.key}
+                onClick={() => setTab(t.key)}
+                className="flex-1 px-4 py-2 rounded-md text-xs font-medium transition-all"
+                style={{
+                  background: tab === t.key ? "rgba(196,255,60,0.1)" : "transparent",
+                  color: tab === t.key ? "var(--accent)" : "var(--muted)",
+                }}
               >
-                ⚔️ Take Challenge
-              </Link>
-              <Link
-                href="/trainers"
-                className="px-4 py-2 text-xs border border-zinc-700 text-zinc-300 rounded-lg hover:border-zinc-500 transition-colors text-center"
+                {t.label}
+              </button>
+            ))}
+          </div>
+
+          {/* ── Passport Tab ── */}
+          {tab === "passport" && (
+            <div className="space-y-6">
+              {/* Passport card */}
+              <div
+                className="rounded-2xl overflow-hidden"
+                style={{
+                  background: "linear-gradient(135deg, #111 0%, #0a0a0f 50%, #111 100%)",
+                  border: "1px solid rgba(196,255,60,0.15)",
+                  boxShadow: "0 0 40px rgba(196,255,60,0.08)",
+                }}
               >
-                🥋 Find Trainer
-              </Link>
-              <Link
-                href={`/badge/${agent.id}`}
-                className="px-4 py-2 text-xs border border-zinc-700 text-zinc-300 rounded-lg hover:border-zinc-500 transition-colors text-center"
-              >
-                🏅 View Badge
-              </Link>
-            </div>
-          </div>
-        </div>
-
-        {/* ── Score Overview ── */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <StatCard label="Dojo Score" value={sp.overallScore} sub={`${sp.assessmentCount} assessments`} color={BELT_COLOR[belt]} />
-          <StatCard label="Maiat Base" value={maiatBase} sub="On-chain trust" color="#60a5fa" />
-          <StatCard label="Dojo Boost" value={`+${boost.total}`} sub="Max +30 pts" color="#a78bfa" />
-          <StatCard label="Combined Score" value={maiatCombined} sub={`#${rank} overall`} color="#C4FF3C" />
-        </div>
-
-        {/* ── Score Rings + Boost Breakdown ── */}
-        <div className="grid lg:grid-cols-2 gap-6">
-          {/* Rings */}
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
-            <h3 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider mb-6">Score Breakdown</h3>
-            <div className="flex items-center justify-around">
-              <ScoreRing value={sp.overallScore} size={100} color={BELT_COLOR[belt]} label="Dojo" />
-              <div className="text-zinc-700 text-2xl font-mono">+</div>
-              <ScoreRing value={maiatBase} size={100} color="#60a5fa" label="Maiat" />
-              <div className="text-zinc-700 text-2xl font-mono">=</div>
-              <ScoreRing value={maiatCombined} size={100} color="#C4FF3C" label="Combined" />
-            </div>
-            <div className="mt-6 p-3 bg-zinc-800/50 rounded-lg border border-zinc-700">
-              <p className="text-[11px] text-zinc-400 font-mono">{boost.breakdown.explanation}</p>
-            </div>
-          </div>
-
-          {/* Boost breakdown */}
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
-            <h3 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider mb-5">Trust Boost Components</h3>
-            <div className="space-y-4">
-              <BarStat label="Score Quality" value={boost.breakdown.scoreBoost} max={12} color="#C4FF3C" />
-              <BarStat label="Domain Breadth" value={boost.breakdown.breadthBoost} max={6} color="#4488ff" />
-              <BarStat label="Assessor Confidence" value={boost.breakdown.confidenceBoost} max={4} color="#a78bfa" />
-              <BarStat label="Assessment Freshness" value={boost.breakdown.recencyBoost} max={3} color="#34d399" />
-              <BarStat label="Trust Domain Bonus" value={boost.breakdown.trustDomainBonus} max={5} color="#fbbf24" />
-            </div>
-            <div className="mt-4 pt-4 border-t border-zinc-800 flex justify-between items-center">
-              <span className="text-xs text-zinc-500">Total boost applied</span>
-              <span className="text-lg font-bold font-mono" style={{ color: "#C4FF3C" }}>
-                +{boost.total} / 30 pts
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* ── Domain Skills ── */}
-        <div className="grid lg:grid-cols-2 gap-6">
-          {/* Skill bars */}
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
-            <div className="flex items-center justify-between mb-5">
-              <h3 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider">Skill Domains</h3>
-              <Link href="/certifications" className="text-[10px] text-[var(--accent)] hover:underline">
-                Full cert →
-              </Link>
-            </div>
-            <div className="space-y-4">
-              {domainScores.map(({ domain, avg }) => (
-                <BarStat
-                  key={domain}
-                  label={DOMAIN_LABEL[domain] ?? domain}
-                  value={avg}
-                  color={DOMAIN_COLOR[domain] ?? "#888"}
-                />
-              ))}
-            </div>
-            {sp.weaknesses.length > 0 && (
-              <div className="mt-5 p-3 bg-zinc-800/50 rounded-lg border border-zinc-700">
-                <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">Weaknesses flagged</p>
-                <div className="flex flex-wrap gap-1.5 mt-1">
-                  {sp.weaknesses.map((w) => (
-                    <span key={w} className="px-2 py-0.5 text-[10px] border border-red-900/50 text-red-400 rounded">
-                      {w}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Trust domains */}
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
-            <div className="flex items-center justify-between mb-5">
-              <h3 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider">
-                Trust Domains ⚡
-              </h3>
-              <Link href="/trust-domains" className="text-[10px] text-[var(--accent)] hover:underline">
-                Learn more →
-              </Link>
-            </div>
-            {trustCaps.length > 0 ? (
-              <div className="space-y-4">
-                {trustCaps.map((cap) => (
-                  <div key={cap.subdomain} className="space-y-2">
-                    <BarStat
-                      label={`trust.${cap.subdomain}`}
-                      value={cap.score}
-                      color="#C4FF3C"
-                    />
-                    <p className="text-[10px] text-zinc-600 pl-1">
-                      {cap.challengeResults[0]?.notes ?? "No notes"}
-                    </p>
+                <div className="px-6 py-3 flex items-center justify-between" style={{ background: "linear-gradient(90deg, rgba(196,255,60,0.08) 0%, transparent 100%)", borderBottom: "1px solid rgba(196,255,60,0.1)" }}>
+                  <div className="flex items-center gap-2">
+                    <span>◉</span>
+                    <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-[var(--accent)]">Maiat Passport</span>
                   </div>
-                ))}
-                <div className="mt-4 p-3 bg-[#C4FF3C]/5 border border-[#C4FF3C]/20 rounded-lg">
-                  <p className="text-[11px] text-[#C4FF3C]/80">
-                    ⚡ Trust domain bonus: <strong>+{boost.breakdown.trustDomainBonus} pts</strong> applied to Maiat boost
-                  </p>
+                  <span className="text-[9px] text-[var(--muted)] font-mono">{AGENT.passportId}</span>
                 </div>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center h-40 text-center">
-                <p className="text-zinc-500 text-sm mb-3">No trust assessments on record</p>
-                <p className="text-zinc-600 text-xs mb-4">
-                  Complete honesty, safety, and adversarial assessments to unlock a +5 pt trust domain bonus.
-                </p>
-                <Link
-                  href="/challenges"
-                  className="px-4 py-2 text-xs border border-[var(--accent)] text-[var(--accent)] rounded-lg hover:bg-[var(--accent)] hover:text-black transition-colors"
-                >
-                  Take Trust Challenges →
-                </Link>
-              </div>
-            )}
-          </div>
-        </div>
 
-        {/* ── Recommended Challenges + Recent Sessions ── */}
-        <div className="grid lg:grid-cols-2 gap-6">
-          {/* Recommended challenges */}
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
-            <h3 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider mb-5">
-              Recommended Next
-            </h3>
-            {weakDomains.length > 0 ? (
-              <div className="space-y-3">
-                {weakDomains.map((domain) => {
-                  const score = domainScores.find((d) => d.domain === domain)?.avg ?? 0;
-                  return (
-                    <Link
-                      key={domain}
-                      href="/challenges"
-                      className="flex items-center justify-between p-3 bg-zinc-800/50 border border-zinc-700 hover:border-zinc-500 rounded-lg transition-colors group"
-                    >
-                      <div>
-                        <div className="text-sm text-white group-hover:text-[var(--accent)] transition-colors">
-                          Improve {DOMAIN_LABEL[domain] ?? domain}
+                <div className="p-6 space-y-5">
+                  {/* Trust domains */}
+                  <div className="space-y-3">
+                    <p className="text-[10px] text-[var(--muted)] uppercase tracking-wider">Trust Domains (1.5× weight)</p>
+                    {TRUST_DOMAINS.map((d) => (
+                      <div key={d.name} className="space-y-1">
+                        <div className="flex items-center justify-between text-xs">
+                          <span>{d.emoji} {d.name}</span>
+                          <span className="font-mono" style={{ color: d.color }}>{d.score}/100</span>
                         </div>
-                        <div className="text-[11px] text-zinc-500 mt-0.5">
-                          Current: {score}/100 — target: {Math.min(100, score + 15)}
+                        <div className="h-1.5 rounded-full bg-[rgba(255,255,255,0.04)] overflow-hidden">
+                          <div className="h-full rounded-full" style={{ width: `${d.score}%`, background: d.color }} />
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <div
-                          className="text-xs px-2 py-0.5 rounded border"
-                          style={{
-                            color: DOMAIN_COLOR[domain] ?? "#888",
-                            borderColor: (DOMAIN_COLOR[domain] ?? "#888") + "33",
-                          }}
-                        >
-                          {DOMAIN_LABEL[domain]}
-                        </div>
-                        <span className="text-zinc-600 group-hover:text-white transition-colors">→</span>
-                      </div>
-                    </Link>
-                  );
-                })}
-                <Link
-                  href="/quests"
-                  className="block text-center text-xs text-zinc-500 hover:text-[var(--accent)] transition-colors pt-2"
-                >
-                  View all quests & challenges →
-                </Link>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center h-32 text-center">
-                <p className="text-zinc-400 text-sm">🎉 All domains strong!</p>
-                <Link href="/quests" className="text-[var(--accent)] text-xs mt-2 hover:underline">
-                  Check quests for XP →
-                </Link>
-              </div>
-            )}
-          </div>
-
-          {/* Recent sessions */}
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
-            <div className="flex items-center justify-between mb-5">
-              <h3 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider">Recent Sessions</h3>
-              <Link href="/sessions" className="text-[10px] text-[var(--accent)] hover:underline">
-                All sessions →
-              </Link>
-            </div>
-            <div className="space-y-3">
-              {recentSessions.map((session) => (
-                <div
-                  key={session.id}
-                  className="p-3 bg-zinc-800/50 border border-zinc-700 rounded-lg"
-                >
-                  <div className="flex justify-between items-start mb-1">
-                    <span className="text-sm text-white">{session.skill}</span>
-                    <span className="text-[10px] text-green-400">✓ Done</span>
-                  </div>
-                  <div className="text-[11px] text-zinc-500">
-                    Trainer: {session.trainerName} · {session.durationMinutes}m
-                  </div>
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {session.toolsTransferred.slice(0, 3).map((tool) => (
-                      <span
-                        key={tool}
-                        className="px-1.5 py-0.5 text-[9px] border border-zinc-700 text-zinc-500 rounded"
-                      >
-                        {tool}
-                      </span>
                     ))}
                   </div>
+
+                  {/* Dojo boost */}
+                  <div className="flex items-center justify-between px-4 py-3 rounded-lg bg-[rgba(196,255,60,0.05)] border border-[rgba(196,255,60,0.1)]">
+                    <span className="text-xs text-[var(--muted)]">Dojo Training Boost</span>
+                    <span className="text-sm font-bold text-[var(--accent)]">+{trustBoost.total} pts</span>
+                  </div>
+
+                  {/* Meta */}
+                  <div className="flex items-center justify-between text-[9px] text-[var(--muted)]">
+                    <span>Issued: {AGENT.joined}</span>
+                    <span>Owner: {AGENT.owner}</span>
+                    <span className="font-mono">{AGENT.wallet.slice(0, 6)}...{AGENT.wallet.slice(-4)}</span>
+                  </div>
+                </div>
+
+                <div className="h-0.5" style={{ background: "linear-gradient(90deg, #C4FF3C, #4488ff, #aa44ff, #ff8844, #C4FF3C)", opacity: 0.4 }} />
+              </div>
+
+              {/* Actions */}
+              <div className="flex flex-wrap gap-2 justify-center">
+                <button className="px-4 py-2 rounded-lg text-xs border border-[var(--card-border)] hover:border-white/20 transition-colors">
+                  🔗 Share Passport
+                </button>
+                <button className="px-4 py-2 rounded-lg text-xs border border-[var(--card-border)] hover:border-white/20 transition-colors">
+                  {"</>"} Embed Badge
+                </button>
+                <Link href="https://basescan.org" target="_blank" className="px-4 py-2 rounded-lg text-xs border border-[var(--card-border)] hover:border-white/20 transition-colors">
+                  🔍 Verify On-Chain
+                </Link>
+              </div>
+            </div>
+          )}
+
+          {/* ── Skills Tab ── */}
+          {tab === "skills" && (
+            <div className="space-y-4">
+              {/* Strengths */}
+              <div className="rounded-xl p-6 space-y-4" style={{ background: "var(--card)", border: "1px solid var(--card-border)" }}>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--muted)]">Verified Skills</h3>
+                {SKILLS.map((s) => (
+                  <div key={s.domain} className="space-y-2">
+                    <div className="flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2">
+                        <span>{s.emoji}</span>
+                        <span className="font-medium">{s.domain}</span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ color: s.color, background: `${s.color}15` }}>{s.verdict}</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-[10px] text-[var(--muted)]">{s.trainingSessions} sessions · {s.lastTrained}</span>
+                        <span className="font-mono" style={{ color: s.color }}>{s.score}</span>
+                      </div>
+                    </div>
+                    <div className="h-1.5 rounded-full bg-[rgba(255,255,255,0.04)] overflow-hidden">
+                      <div className="h-full rounded-full" style={{ width: `${s.score}%`, background: s.color }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Gaps */}
+              <div className="rounded-xl p-6 space-y-3" style={{ background: "var(--card)", border: "1px solid var(--card-border)" }}>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--muted)]">Improvement Areas</h3>
+                {SKILLS.filter((s) => s.score < 75).map((s) => (
+                  <div key={s.domain} className="flex items-center justify-between px-3 py-2.5 rounded-lg" style={{ background: `${s.color}08`, border: `1px solid ${s.color}15` }}>
+                    <div className="flex items-center gap-2">
+                      <span>{s.emoji}</span>
+                      <div>
+                        <p className="text-xs font-medium">{s.domain}</p>
+                        <p className="text-[10px] text-[var(--muted)]">Score: {s.score} — needs improvement</p>
+                      </div>
+                    </div>
+                    <Link href="/train" className="text-[10px] font-medium hover:underline" style={{ color: s.color }}>
+                      Find Trainer →
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ── History Tab ── */}
+          {tab === "history" && (
+            <div className="rounded-xl p-6 space-y-3" style={{ background: "var(--card)", border: "1px solid var(--card-border)" }}>
+              <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--muted)]">Recent Activity</h3>
+              {ACTIVITY.map((event, i) => (
+                <div key={i} className="flex items-center gap-3 px-3 py-2.5 rounded-lg" style={{ background: "rgba(255,255,255,0.02)" }}>
+                  <span className="text-lg">{event.emoji}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs truncate">{event.label}</p>
+                    <p className="text-[10px] text-[var(--muted)]">{event.time}</p>
+                  </div>
+                  <span className="text-[10px] text-[var(--accent)] font-mono shrink-0">{event.impact}</span>
                 </div>
               ))}
             </div>
-          </div>
-        </div>
-
-        {/* ── Certification Assessment Detail ── */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
-          <div className="flex items-center justify-between mb-5">
-            <h3 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider">
-              Assessment History — {sp.assessmentCount} assessments
-            </h3>
-            <Link href="/certifications" className="text-[10px] text-[var(--accent)] hover:underline">
-              View certs →
-            </Link>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs">
-              <thead>
-                <tr className="border-b border-zinc-800 text-zinc-500 uppercase tracking-wider">
-                  <th className="text-left pb-2 pr-4">Domain</th>
-                  <th className="text-left pb-2 pr-4">Subdomain</th>
-                  <th className="text-right pb-2 pr-4">Score</th>
-                  <th className="text-right pb-2 pr-4">Confidence</th>
-                  <th className="text-right pb-2 pr-4">Trials</th>
-                  <th className="text-left pb-2">Notes</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-800/50">
-                {sp.capabilities.map((cap, idx) => {
-                  const isTrust = TRUST_MULTIPLIER_DOMAINS.has(cap.domain) || cap.domain === "trust";
-                  return (
-                    <tr key={idx} className="hover:bg-zinc-800/30 transition-colors">
-                      <td className="py-2 pr-4">
-                        <span
-                          className="px-2 py-0.5 rounded text-[10px] border"
-                          style={{
-                            color: isTrust ? "#C4FF3C" : (DOMAIN_COLOR[cap.domain] ?? "#888"),
-                            borderColor: (isTrust ? "#C4FF3C" : (DOMAIN_COLOR[cap.domain] ?? "#888")) + "33",
-                          }}
-                        >
-                          {cap.domain}
-                          {isTrust && " ⚡"}
-                        </span>
-                      </td>
-                      <td className="py-2 pr-4 text-zinc-300">{cap.subdomain}</td>
-                      <td className="py-2 pr-4 text-right">
-                        <span
-                          className="font-mono font-bold"
-                          style={{ color: cap.score >= 85 ? "#C4FF3C" : cap.score >= 70 ? "#fbbf24" : "#f87171" }}
-                        >
-                          {cap.score}
-                        </span>
-                      </td>
-                      <td className="py-2 pr-4 text-right text-zinc-400 font-mono">
-                        {Math.round(cap.confidence * 100)}%
-                      </td>
-                      <td className="py-2 pr-4 text-right text-zinc-500">{cap.trialCount}</td>
-                      <td className="py-2 text-zinc-500 max-w-xs truncate">
-                        {cap.challengeResults[0]?.notes ?? "—"}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* ── Maiat API Quick Integration ── */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider">
-              Maiat Integration — Pull This Agent&apos;s Data
-            </h3>
-            <Link href="/docs" className="text-[10px] text-[var(--accent)] hover:underline">
-              Full API docs →
-            </Link>
-          </div>
-          <div className="grid md:grid-cols-2 gap-4">
-            <div>
-              <p className="text-[11px] text-zinc-500 mb-2">Fetch cert data (GET)</p>
-              <pre className="bg-black/50 border border-zinc-800 rounded-lg p-3 text-[10px] text-zinc-300 font-mono overflow-x-auto">
-                {`GET /api/v1/agent-cert/${agent.id}
-→ { agentId, certLevel, overallScore,
-    dojoBoost, domainScores, lastAssessed }`}
-              </pre>
-            </div>
-            <div>
-              <p className="text-[11px] text-zinc-500 mb-2">Compute combined score (POST)</p>
-              <pre className="bg-black/50 border border-zinc-800 rounded-lg p-3 text-[10px] text-zinc-300 font-mono overflow-x-auto">
-                {`POST /api/v1/maiat
-{ agentId: "${agent.id}", maiatBaseScore: ${maiatBase} }
-→ combinedScore: ${maiatCombined}`}
-              </pre>
-            </div>
-          </div>
-        </div>
-
-        {/* ── Bottom Action Row ── */}
-        <div className="flex flex-wrap gap-3 pb-4">
-          <Link
-            href="/leaderboard"
-            className="px-4 py-2 text-sm border border-zinc-700 text-zinc-300 rounded-lg hover:border-zinc-500 transition-colors"
-          >
-            🏆 Leaderboard
-          </Link>
-          <Link
-            href="/compare"
-            className="px-4 py-2 text-sm border border-zinc-700 text-zinc-300 rounded-lg hover:border-zinc-500 transition-colors"
-          >
-            ↔️ Compare Agents
-          </Link>
-          <Link
-            href="/rankings"
-            className="px-4 py-2 text-sm border border-zinc-700 text-zinc-300 rounded-lg hover:border-zinc-500 transition-colors"
-          >
-            📊 Season Rankings
-          </Link>
-          <Link
-            href="/store"
-            className="px-4 py-2 text-sm border border-zinc-700 text-zinc-300 rounded-lg hover:border-zinc-500 transition-colors"
-          >
-            🛍️ MAIAT Store
-          </Link>
-          <Link
-            href={`/badge/${agent.id}`}
-            className="px-4 py-2 text-sm border border-[var(--accent)] text-[var(--accent)] rounded-lg hover:bg-[var(--accent)] hover:text-black transition-colors"
-          >
-            🏅 Embed Badge
-          </Link>
+          )}
         </div>
       </main>
-    </div>
+    </>
   );
 }
