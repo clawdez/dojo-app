@@ -605,7 +605,7 @@ export default function PassportPage() {
             </Link>
 
             <Link
-              href="/assess"
+              href="/onboard"
               className="px-4 py-2 rounded-lg text-xs font-medium transition-all"
               style={{
                 background: "rgba(196,255,60,0.08)",
