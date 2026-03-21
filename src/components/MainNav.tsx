@@ -30,6 +30,7 @@ const NAV_ITEMS = [
   { href: "/governance", label: "Governance 🏛️" },
   { href: "/feed", label: "Feed 📡" },
   { href: "/network", label: "Network 🕸️" },
+  { href: "/marketplace", label: "Marketplace 🏪" },
   { href: "/docs", label: "API Docs" },
 ];
 
