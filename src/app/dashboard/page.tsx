@@ -1,10 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import MainNav from "@/components/MainNav";
 import { computeMaiatTrustBoost, getCertLevel, CERT_LEVEL_META } from "@/lib/maiat-bridge";
 import type { SkillProfile } from "@/lib/mock-data";
+import { getScoreHistory, type ScoreEntry } from "@/lib/score-history";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid,
+  Legend,
+} from "recharts";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -101,10 +112,123 @@ function ScoreRing({ score, size = 100, label }: { score: number; size?: number;
   );
 }
 
+// ─── Progression Chart ───────────────────────────────────────────────────────
+
+const DOMAIN_COLORS_MAP: Record<string, string> = {
+  code: "#C4FF3C",
+  research: "#4488ff",
+  creative: "#ff8844",
+  ops: "#aa44ff",
+  safety: "#44ffff",
+};
+
+function ProgressionChart({ history }: { history: ScoreEntry[] }) {
+  if (history.length === 0) {
+    return (
+      <div
+        className="rounded-xl p-6 text-center"
+        style={{ background: "var(--card)", border: "1px solid var(--card-border)" }}
+      >
+        <p className="text-sm text-[var(--muted)]">No assessment history yet</p>
+        <p className="text-xs text-[var(--muted)] mt-1">
+          Complete an assessment to see your progression
+        </p>
+        <Link
+          href="/assess"
+          className="inline-block mt-3 px-4 py-2 text-xs font-mono border transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
+          style={{ borderColor: "var(--card-border)", color: "var(--muted)" }}
+        >
+          Take Assessment →
+        </Link>
+      </div>
+    );
+  }
+
+  const chartData = history.map((entry, i) => ({
+    name: `#${i + 1}`,
+    date: new Date(entry.timestamp).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+    overall: entry.overallScore,
+    ...entry.domains,
+  }));
+
+  const allDomains = Array.from(
+    new Set(history.flatMap((e) => Object.keys(e.domains))),
+  );
+
+  return (
+    <div
+      className="rounded-xl p-6 space-y-4"
+      style={{ background: "var(--card)", border: "1px solid var(--card-border)" }}
+    >
+      <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
+        Score Progression
+      </h3>
+      <ResponsiveContainer width="100%" height={240}>
+        <LineChart data={chartData} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+          <XAxis
+            dataKey="date"
+            tick={{ fontSize: 10, fill: "var(--muted)" }}
+            axisLine={{ stroke: "var(--card-border)" }}
+            tickLine={false}
+          />
+          <YAxis
+            domain={[0, 100]}
+            tick={{ fontSize: 10, fill: "var(--muted)" }}
+            axisLine={false}
+            tickLine={false}
+          />
+          <Tooltip
+            contentStyle={{
+              backgroundColor: "var(--card)",
+              border: "1px solid var(--card-border)",
+              borderRadius: 0,
+              fontSize: 11,
+              fontFamily: "monospace",
+            }}
+            labelStyle={{ color: "var(--muted)" }}
+          />
+          <Legend
+            wrapperStyle={{ fontSize: 10, fontFamily: "monospace" }}
+          />
+          <Line
+            type="monotone"
+            dataKey="overall"
+            stroke="#C4FF3C"
+            strokeWidth={2}
+            dot={{ fill: "#C4FF3C", r: 3 }}
+            name="Overall"
+          />
+          {allDomains.map((domain) => (
+            <Line
+              key={domain}
+              type="monotone"
+              dataKey={domain}
+              stroke={DOMAIN_COLORS_MAP[domain] || "#888"}
+              strokeWidth={1.5}
+              strokeDasharray="4 4"
+              dot={false}
+              name={domain.charAt(0).toUpperCase() + domain.slice(1)}
+            />
+          ))}
+        </LineChart>
+      </ResponsiveContainer>
+      <p className="text-xs text-[var(--muted)] font-mono">
+        {history.length} assessment{history.length !== 1 ? "s" : ""} tracked locally
+      </p>
+    </div>
+  );
+}
+
 // ─── Main ────────────────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
   const [tab, setTab] = useState<DashTab>("passport");
+  const [scoreHistory, setScoreHistory] = useState<ScoreEntry[]>([]);
+
+  useEffect(() => {
+    setScoreHistory(getScoreHistory());
+  }, []);
 
   const trustBoost = computeMaiatTrustBoost(MOCK_PROFILE);
   const certLevel = getCertLevel(MOCK_PROFILE.overallScore, MOCK_PROFILE.assessmentCount);
@@ -278,6 +402,9 @@ export default function DashboardPage() {
                   </div>
                 ))}
               </div>
+
+              {/* Progression chart */}
+              <ProgressionChart history={scoreHistory} />
             </div>
           )}
 

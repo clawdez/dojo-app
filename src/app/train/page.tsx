@@ -1,280 +1,782 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
+import { useState, useRef, useEffect } from "react";
 import MainNav from "@/components/MainNav";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-type TrainTab = "find" | "requests" | "my-sessions";
+type TrainView = "select" | "pay" | "session" | "complete";
 
-interface Trainer {
-  id: string;
-  name: string;
-  avatar: string;
-  specialty: string;
-  domain: string;
-  score: number;
-  rate: number;
-  sessions: number;
-  rating: number;
+interface Domain {
+  key: string;
+  label: string;
+  emoji: string;
   color: string;
-  verified: boolean;
+  sensei: string;
   description: string;
+  priceUSDC: string;
 }
 
-interface TrainingRequest {
-  id: string;
-  from: string;
-  fromAvatar: string;
+interface Message {
+  role: "user" | "assistant";
+  content: string;
+  timestamp: string;
+}
+
+interface TrainingRecord {
+  agentId: string;
   domain: string;
-  description: string;
-  status: "pending" | "active" | "completed";
-  offered: number;
-  time: string;
+  sessionId: string;
+  duration: number;
+  turns: number;
+  topics: string[];
+  feedback: string;
+  completedAt: string;
 }
 
-// ─── Mock Data ───────────────────────────────────────────────────────────────
+// ─── Constants ───────────────────────────────────────────────────────────────
 
-const TRAINERS: Trainer[] = [
+const DOMAINS: Domain[] = [
   {
-    id: "t1", name: "SolanaGuru", avatar: "⚡", specialty: "Anchor + Pinocchio programs",
-    domain: "Code", score: 94, rate: 30, sessions: 142, rating: 4.9, color: "#C4FF3C",
-    verified: true, description: "Specialized in Solana smart contract development. Trained 50+ agents on Anchor patterns, CU optimization, and security audits.",
+    key: "code",
+    label: "Code",
+    emoji: "💻",
+    color: "#C4FF3C",
+    sensei: "SolanaGuru",
+    description: "TypeScript, Solana, API design, architecture",
+    priceUSDC: "0.03",
   },
   {
-    id: "t2", name: "ResearchBot", avatar: "🧠", specialty: "Deep research & synthesis",
-    domain: "Research", score: 91, rate: 20, sessions: 89, rating: 4.8, color: "#4488ff",
-    verified: true, description: "Expert in multi-source research synthesis with citation verification. Specializes in market intel, competitor analysis, and academic review.",
+    key: "research",
+    label: "Research",
+    emoji: "🔍",
+    color: "#4488ff",
+    sensei: "ResearchBot",
+    description: "Source verification, synthesis, market intel",
+    priceUSDC: "0.02",
   },
   {
-    id: "t3", name: "CopyMaster", avatar: "✍️", specialty: "Brand voice & creative writing",
-    domain: "Creative", score: 88, rate: 25, sessions: 67, rating: 4.7, color: "#ff8844",
-    verified: true, description: "Transforms template-following agents into distinctive writers. Focus on brand voice development, storytelling, and persuasive copy.",
+    key: "creative",
+    label: "Creative",
+    emoji: "✍️",
+    color: "#ff8844",
+    sensei: "CopyMaster",
+    description: "Brand voice, copywriting, creative content",
+    priceUSDC: "0.02",
   },
   {
-    id: "t4", name: "OpsEngine", avatar: "⚙️", specialty: "CI/CD & cloud infrastructure",
-    domain: "Ops", score: 90, rate: 35, sessions: 45, rating: 4.9, color: "#aa44ff",
-    verified: true, description: "DevOps specialist. Multi-cloud (AWS/GCP/DO), Kubernetes, Docker, Terraform. Trains agents on production-grade deployment pipelines.",
+    key: "ops",
+    label: "Ops",
+    emoji: "⚙️",
+    color: "#aa44ff",
+    sensei: "OpsEngine",
+    description: "CI/CD, cloud infra, Docker, reliability",
+    priceUSDC: "0.05",
   },
   {
-    id: "t5", name: "TrustGuard", avatar: "🛡️", specialty: "Adversarial resistance & safety",
-    domain: "Safety", score: 96, rate: 40, sessions: 112, rating: 5.0, color: "#44ffff",
-    verified: true, description: "Red team specialist. Trains agents to resist prompt injection, social engineering, data exfiltration, and instruction override attacks.",
-  },
-  {
-    id: "t6", name: "Nexus", avatar: "🧬", specialty: "Full-stack TypeScript & DeFi",
-    domain: "Code", score: 86, rate: 22, sessions: 38, rating: 4.6, color: "#C4FF3C",
-    verified: true, description: "Full-stack agent specializing in Next.js, TypeScript, and DeFi protocol integration. Focus on clean architecture and type safety.",
+    key: "safety",
+    label: "Safety",
+    emoji: "🛡️",
+    color: "#44ffff",
+    sensei: "TrustGuard",
+    description: "Adversarial resistance, safety, boundaries",
+    priceUSDC: "0.04",
   },
 ];
 
-const MY_REQUESTS: TrainingRequest[] = [
-  { id: "r1", from: "NexusBot", fromAvatar: "🧬", domain: "Code", description: "Wants TypeScript patterns training", status: "active", offered: 25, time: "Started 2h ago" },
-  { id: "r2", from: "DataMiner", fromAvatar: "📊", domain: "Research", description: "Needs help with source verification", status: "pending", offered: 20, time: "Requested 4h ago" },
-  { id: "r3", from: "ScribeAI", fromAvatar: "📝", domain: "Creative", description: "Completed brand voice training", status: "completed", offered: 30, time: "Completed yesterday" },
-];
+// ─── Domain Select ────────────────────────────────────────────────────────────
 
-// ─── Main Component ──────────────────────────────────────────────────────────
+function DomainSelect({
+  onSelect,
+}: {
+  onSelect: (domain: Domain) => void;
+}) {
+  return (
+    <div className="min-h-screen flex flex-col">
+      <MainNav />
+      <div className="flex-1 px-6 py-10 max-w-3xl mx-auto w-full">
+        <div className="mb-8">
+          <div className="text-xs font-mono text-[var(--muted)] mb-2">AGENT-TO-AGENT TRAINING</div>
+          <h1 className="text-3xl font-bold mb-3">Training Dojo</h1>
+          <p className="text-[var(--muted)] text-sm leading-relaxed">
+            Select a domain. A sensei agent will run a live training session, teaching techniques
+            and testing your implementation in real-time.
+          </p>
+        </div>
 
-export default function TrainPage() {
-  const [tab, setTab] = useState<TrainTab>("find");
-  const [domainFilter, setDomainFilter] = useState<string>("all");
-  const [selectedTrainer, setSelectedTrainer] = useState<Trainer | null>(null);
+        <div className="space-y-3 mb-8">
+          {DOMAINS.map((domain) => (
+            <button
+              key={domain.key}
+              onClick={() => onSelect(domain)}
+              className="w-full text-left p-5 border transition-all hover:border-opacity-60 group"
+              style={{ borderColor: "var(--card-border)", backgroundColor: "var(--card)" }}
+            >
+              <div className="flex items-center gap-4">
+                <div
+                  className="w-12 h-12 flex items-center justify-center text-2xl shrink-0"
+                  style={{ backgroundColor: domain.color + "15", border: `1px solid ${domain.color}30` }}
+                >
+                  {domain.emoji}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="font-bold">{domain.label}</span>
+                    <span
+                      className="text-xs font-mono px-1.5 py-0.5 border"
+                      style={{ borderColor: domain.color + "40", color: domain.color }}
+                    >
+                      {domain.sensei}
+                    </span>
+                  </div>
+                  <p className="text-xs text-[var(--muted)]">{domain.description}</p>
+                </div>
+                <div className="text-right shrink-0">
+                  <div className="text-sm font-bold" style={{ color: domain.color }}>
+                    ${domain.priceUSDC}
+                  </div>
+                  <div className="text-xs text-[var(--muted)] font-mono">USDC</div>
+                </div>
+              </div>
+            </button>
+          ))}
+        </div>
 
-  const domains = ["all", "Code", "Research", "Creative", "Ops", "Safety"];
+        <div
+          className="p-4 border text-xs font-mono text-[var(--muted)]"
+          style={{ borderColor: "var(--card-border)" }}
+        >
+          🔒 Training sessions use the x402 payment protocol. Payments: 70% to sensei · 30% to platform.
+        </div>
+      </div>
+    </div>
+  );
+}
 
-  const filteredTrainers = domainFilter === "all"
-    ? TRAINERS
-    : TRAINERS.filter((t) => t.domain === domainFilter);
+// ─── Payment Gate ────────────────────────────────────────────────────────────
+
+function PaymentGate({
+  domain,
+  onPay,
+  onBack,
+}: {
+  domain: Domain;
+  onPay: (walletAddr: string) => void;
+  onBack: () => void;
+}) {
+  const [wallet, setWallet] = useState("");
+  const [paying, setPaying] = useState(false);
+  const [error, setError] = useState("");
+
+  const senseiFee = (parseFloat(domain.priceUSDC) * 0.7).toFixed(3);
+  const platformFee = (parseFloat(domain.priceUSDC) * 0.3).toFixed(3);
+
+  async function handlePay() {
+    if (!wallet.trim()) {
+      setError("Enter a wallet address to continue");
+      return;
+    }
+    setPaying(true);
+    setError("");
+    try {
+      const res = await fetch("/api/v1/pay", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          resource: `training.${domain.key}`,
+          amount: domain.priceUSDC,
+          payer: wallet,
+          domain: domain.key,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        onPay(wallet);
+      } else {
+        setError(data.error || "Payment failed");
+      }
+    } catch {
+      setError("Payment service unavailable — using mock payment");
+      // Allow mock payment through
+      setTimeout(() => onPay(wallet), 500);
+    } finally {
+      setPaying(false);
+    }
+  }
 
   return (
-    <>
+    <div className="min-h-screen flex flex-col">
       <MainNav />
-      <main className="min-h-screen px-4 py-10">
-        <div className="max-w-4xl mx-auto space-y-6">
-          <div className="space-y-2">
-            <h1 className="text-2xl font-bold">Train</h1>
-            <p className="text-sm text-[var(--muted)]">
-              Find expert agents to train yours, or offer your skills to train others
-            </p>
-          </div>
+      <div className="flex-1 flex items-center justify-center px-6 py-12">
+        <div className="max-w-md w-full">
+          <button
+            onClick={onBack}
+            className="text-xs font-mono text-[var(--muted)] hover:text-white mb-6 transition-colors"
+          >
+            ← Back
+          </button>
 
-          {/* Tabs */}
-          <div className="flex gap-1 p-1 rounded-lg bg-[var(--card)] border border-[var(--card-border)]">
-            {([
-              { key: "find" as TrainTab, label: "🔍 Find Trainers" },
-              { key: "requests" as TrainTab, label: "📥 Training Requests" },
-              { key: "my-sessions" as TrainTab, label: "📋 My Sessions" },
-            ]).map((t) => (
-              <button
-                key={t.key}
-                onClick={() => setTab(t.key)}
-                className="flex-1 px-4 py-2 rounded-md text-xs font-medium transition-all"
-                style={{
-                  background: tab === t.key ? "rgba(196,255,60,0.1)" : "transparent",
-                  color: tab === t.key ? "var(--accent)" : "var(--muted)",
-                }}
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
-
-          {/* ── Find Trainers Tab ── */}
-          {tab === "find" && (
-            <div className="space-y-4">
-              {/* Domain filter */}
-              <div className="flex gap-2 flex-wrap">
-                {domains.map((d) => (
-                  <button
-                    key={d}
-                    onClick={() => setDomainFilter(d)}
-                    className="px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all"
-                    style={{
-                      background: domainFilter === d ? "rgba(196,255,60,0.1)" : "var(--card)",
-                      color: domainFilter === d ? "var(--accent)" : "var(--muted)",
-                      border: `1px solid ${domainFilter === d ? "rgba(196,255,60,0.2)" : "var(--card-border)"}`,
-                    }}
-                  >
-                    {d === "all" ? "All Domains" : d}
-                  </button>
-                ))}
-              </div>
-
-              {/* Trainer list */}
-              <div className="space-y-3">
-                {filteredTrainers.map((trainer) => (
-                  <div
-                    key={trainer.id}
-                    className="rounded-xl p-5 cursor-pointer transition-all hover:border-white/10"
-                    style={{ background: "var(--card)", border: "1px solid var(--card-border)" }}
-                    onClick={() => setSelectedTrainer(selectedTrainer?.id === trainer.id ? null : trainer)}
-                  >
-                    <div className="flex items-start gap-4">
-                      <div
-                        className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl shrink-0"
-                        style={{ background: `${trainer.color}10`, border: `1px solid ${trainer.color}20` }}
-                      >
-                        {trainer.avatar}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <h3 className="text-sm font-bold">{trainer.name}</h3>
-                          {trainer.verified && (
-                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-[rgba(196,255,60,0.1)] text-[var(--accent)]">VERIFIED</span>
-                          )}
-                          <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ color: trainer.color, background: `${trainer.color}10` }}>
-                            {trainer.domain}
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-[var(--muted)] mt-0.5">{trainer.specialty}</p>
-                      </div>
-                      <div className="text-right shrink-0">
-                        <p className="text-sm font-bold" style={{ color: trainer.color }}>{trainer.score}</p>
-                        <p className="text-[9px] text-[var(--muted)]">{trainer.rate} MAIAT/session</p>
-                      </div>
-                    </div>
-
-                    {/* Expanded details */}
-                    {selectedTrainer?.id === trainer.id && (
-                      <div className="mt-4 pt-4 border-t border-[var(--card-border)] space-y-3">
-                        <p className="text-xs text-[var(--muted)]">{trainer.description}</p>
-                        <div className="flex items-center gap-4 text-[10px] text-[var(--muted)]">
-                          <span>⭐ {trainer.rating}/5.0</span>
-                          <span>📚 {trainer.sessions} sessions</span>
-                          <span>💰 {trainer.rate} MAIAT/session</span>
-                        </div>
-                        <button className="px-4 py-2 rounded-lg text-xs font-medium bg-[var(--accent)] text-black hover:opacity-90 transition-opacity">
-                          Request Training →
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                ))}
+          {/* Domain header */}
+          <div
+            className="p-5 border mb-6"
+            style={{ borderColor: domain.color + "40", backgroundColor: domain.color + "08" }}
+          >
+            <div className="flex items-center gap-3 mb-2">
+              <span className="text-2xl">{domain.emoji}</span>
+              <div>
+                <div className="font-bold">{domain.label} Training</div>
+                <div className="text-xs text-[var(--muted)]">Sensei: {domain.sensei}</div>
               </div>
             </div>
-          )}
+            <p className="text-xs text-[var(--muted)]">{domain.description}</p>
+          </div>
 
-          {/* ── Training Requests Tab ── */}
-          {tab === "requests" && (
-            <div className="space-y-3">
-              <p className="text-xs text-[var(--muted)]">
-                Other agents requesting training from you based on your verified skills
-              </p>
-              {MY_REQUESTS.map((req) => (
-                <div
-                  key={req.id}
-                  className="rounded-xl p-5"
-                  style={{ background: "var(--card)", border: "1px solid var(--card-border)" }}
-                >
-                  <div className="flex items-center gap-4">
-                    <span className="text-2xl">{req.fromAvatar}</span>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-sm font-medium">{req.from}</h3>
-                        <span className="text-[9px] px-1.5 py-0.5 rounded"
-                          style={{
-                            color: req.status === "active" ? "var(--accent)" : req.status === "pending" ? "var(--orange)" : "var(--muted)",
-                            background: req.status === "active" ? "rgba(196,255,60,0.1)" : req.status === "pending" ? "rgba(255,136,68,0.1)" : "rgba(255,255,255,0.05)",
-                          }}
-                        >
-                          {req.status.toUpperCase()}
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-[var(--muted)]">{req.description}</p>
-                      <p className="text-[10px] text-[var(--muted)] mt-1">{req.time} · {req.offered} MAIAT offered</p>
-                    </div>
-                    {req.status === "pending" && (
-                      <div className="flex gap-2">
-                        <button className="px-3 py-1.5 rounded text-[10px] bg-[var(--accent)] text-black">Accept</button>
-                        <button className="px-3 py-1.5 rounded text-[10px] border border-[var(--card-border)]">Decline</button>
-                      </div>
-                    )}
-                  </div>
+          {/* HTTP 402 — Payment Required */}
+          <div
+            className="border p-5 mb-6"
+            style={{ borderColor: "var(--card-border)", backgroundColor: "var(--card)" }}
+          >
+            <div className="flex items-center gap-2 mb-4">
+              <span
+                className="text-xs font-mono px-2 py-0.5 border"
+                style={{ borderColor: "#ff884460", color: "#ff8844" }}
+              >
+                HTTP 402
+              </span>
+              <span className="text-xs font-mono text-[var(--muted)]">Payment Required</span>
+            </div>
+
+            <div className="text-lg font-bold mb-1" style={{ color: domain.color }}>
+              ${domain.priceUSDC} USDC
+            </div>
+            <div className="text-xs text-[var(--muted)] mb-4">
+              Unlocks one training session on Base Sepolia
+            </div>
+
+            {/* Revenue split */}
+            <div
+              className="grid grid-cols-2 gap-2 mb-4 p-3 border"
+              style={{ borderColor: "var(--card-border)" }}
+            >
+              <div className="text-center">
+                <div className="text-sm font-bold" style={{ color: domain.color }}>
+                  ${senseiFee}
                 </div>
+                <div className="text-xs text-[var(--muted)] font-mono">70% → Sensei</div>
+              </div>
+              <div className="text-center">
+                <div className="text-sm font-bold text-[var(--muted)]">${platformFee}</div>
+                <div className="text-xs text-[var(--muted)] font-mono">30% → Platform</div>
+              </div>
+            </div>
+
+            {/* Wallet input */}
+            <div className="mb-4">
+              <label className="block text-xs font-mono text-[var(--muted)] mb-1.5">
+                YOUR WALLET ADDRESS
+              </label>
+              <input
+                type="text"
+                value={wallet}
+                onChange={(e) => setWallet(e.target.value)}
+                placeholder="0x... or use mock"
+                className="w-full px-3 py-2.5 bg-[var(--card)] border text-xs font-mono outline-none focus:border-[var(--accent)] transition-colors"
+                style={{ borderColor: "var(--card-border)" }}
+              />
+            </div>
+
+            {error && (
+              <div className="text-xs text-[#ff4444] mb-3 font-mono">{error}</div>
+            )}
+
+            <button
+              onClick={handlePay}
+              disabled={paying}
+              className="w-full py-3 font-mono text-sm font-bold transition-opacity hover:opacity-80 disabled:opacity-50"
+              style={{ backgroundColor: domain.color, color: "#000" }}
+            >
+              {paying ? "Processing..." : `PAY ${domain.priceUSDC} USDC → UNLOCK TRAINING`}
+            </button>
+
+            <button
+              onClick={() => onPay("mock-wallet-" + Date.now())}
+              className="w-full py-2 mt-2 font-mono text-xs text-[var(--muted)] hover:text-white transition-colors"
+            >
+              Use mock payment (dev mode)
+            </button>
+          </div>
+
+          <p className="text-xs font-mono text-[var(--muted)] text-center">
+            x402 payment protocol · Base Sepolia testnet
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Training Session ────────────────────────────────────────────────────────
+
+function TrainingSession({
+  domain,
+  agentId,
+  onComplete,
+}: {
+  domain: Domain;
+  agentId: string;
+  onComplete: (record: TrainingRecord) => void;
+}) {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [topicsCovered, setTopicsCovered] = useState<string[]>([]);
+  const [startTime] = useState(Date.now());
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Start session with first sensei message
+  useEffect(() => {
+    void sendMessage("Hello, I'm ready to start training.");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  async function sendMessage(userText: string) {
+    const userMsg: Message = {
+      role: "user",
+      content: userText,
+      timestamp: new Date().toISOString(),
+    };
+
+    // For first message, don't show it in chat (it's just to init)
+    const isInit = messages.length === 0;
+
+    if (!isInit) {
+      setMessages((prev) => [...prev, userMsg]);
+    }
+    setInput("");
+    setLoading(true);
+
+    try {
+      const history = messages.map((m) => ({ role: m.role, content: m.content }));
+
+      const res = await fetch("/api/v1/train", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          agentId,
+          domain: domain.key,
+          message: userText,
+          sessionId,
+          history,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (data.sessionId && !sessionId) {
+        setSessionId(data.sessionId);
+      }
+
+      if (data.topicsCovered?.length) {
+        setTopicsCovered((prev) => {
+          const all = [...new Set([...prev, ...data.topicsCovered])];
+          return all;
+        });
+      }
+
+      const assistantMsg: Message = {
+        role: "assistant",
+        content: data.response || "Training in progress...",
+        timestamp: new Date().toISOString(),
+      };
+
+      if (isInit) {
+        setMessages([assistantMsg]);
+      } else {
+        setMessages((prev) => [...prev, assistantMsg]);
+      }
+    } catch {
+      const errorMsg: Message = {
+        role: "assistant",
+        content: "Connection error. Let me try again...",
+        timestamp: new Date().toISOString(),
+      };
+      setMessages((prev) => [...prev, errorMsg]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!input.trim() || loading) return;
+    void sendMessage(input.trim());
+  }
+
+  function handleComplete() {
+    const duration = Math.round((Date.now() - startTime) / 1000);
+    const lastAssistant = messages.filter((m) => m.role === "assistant").pop();
+    onComplete({
+      agentId,
+      domain: domain.key,
+      sessionId: sessionId || `sess-${Date.now()}`,
+      duration,
+      turns: Math.floor(messages.length / 2),
+      topics: topicsCovered,
+      feedback: lastAssistant?.content.slice(0, 200) || "Session completed",
+      completedAt: new Date().toISOString(),
+    });
+  }
+
+  const turnCount = Math.floor(messages.length / 2);
+
+  return (
+    <div className="min-h-screen flex flex-col">
+      <MainNav />
+
+      {/* Session header */}
+      <div
+        className="h-12 border-b flex items-center justify-between px-6 shrink-0"
+        style={{ borderColor: "var(--card-border)" }}
+      >
+        <div className="flex items-center gap-3">
+          <span className="text-sm">{domain.emoji}</span>
+          <span className="text-xs font-mono" style={{ color: domain.color }}>
+            {domain.label} Training
+          </span>
+          <span className="text-xs font-mono text-[var(--muted)]">
+            with {domain.sensei}
+          </span>
+        </div>
+        <div className="flex items-center gap-4">
+          {topicsCovered.length > 0 && (
+            <div className="hidden md:flex gap-1">
+              {topicsCovered.slice(0, 3).map((t) => (
+                <span
+                  key={t}
+                  className="text-[10px] font-mono px-1.5 py-0.5 border"
+                  style={{ borderColor: domain.color + "30", color: domain.color }}
+                >
+                  {t}
+                </span>
               ))}
             </div>
           )}
+          <span className="text-xs font-mono text-[var(--muted)]">
+            {turnCount} turn{turnCount !== 1 ? "s" : ""}
+          </span>
+          {turnCount >= 3 && (
+            <button
+              onClick={handleComplete}
+              className="text-xs font-mono px-3 py-1 border transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
+              style={{ borderColor: "var(--card-border)", color: "var(--muted)" }}
+            >
+              Complete Session →
+            </button>
+          )}
+        </div>
+      </div>
 
-          {/* ── My Sessions Tab ── */}
-          {tab === "my-sessions" && (
-            <div className="space-y-4">
-              <div className="rounded-xl p-6 text-center space-y-3" style={{ background: "var(--card)", border: "1px solid var(--card-border)" }}>
-                <p className="text-3xl">🥋</p>
-                <h3 className="text-sm font-bold">Training sessions are recorded on-chain</h3>
-                <p className="text-[11px] text-[var(--muted)] max-w-md mx-auto">
-                  Every completed training session updates both agents&apos; Maiat Passports.
-                  The trainer earns MAIAT tokens and reputation. The trainee gets verified skill improvements.
-                  All via x402 payments.
-                </p>
-                <div className="grid grid-cols-3 gap-4 pt-4">
-                  <div className="text-center">
-                    <p className="text-lg font-bold text-[var(--accent)]">15</p>
-                    <p className="text-[9px] text-[var(--muted)]">Sessions Given</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-lg font-bold text-[var(--blue)]">8</p>
-                    <p className="text-[9px] text-[var(--muted)]">Sessions Taken</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-lg font-bold text-[var(--orange)]">375</p>
-                    <p className="text-[9px] text-[var(--muted)]">MAIAT Earned</p>
-                  </div>
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto p-6 max-w-3xl mx-auto w-full">
+        <div className="space-y-4">
+          {messages.map((msg, i) => (
+            <div
+              key={i}
+              className={`flex gap-3 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+            >
+              {msg.role === "assistant" && (
+                <div
+                  className="w-8 h-8 flex items-center justify-center text-sm shrink-0 mt-1"
+                  style={{
+                    backgroundColor: domain.color + "15",
+                    border: `1px solid ${domain.color}30`,
+                  }}
+                >
+                  {domain.emoji}
+                </div>
+              )}
+              <div
+                className="max-w-lg px-4 py-3 text-sm leading-relaxed"
+                style={
+                  msg.role === "assistant"
+                    ? {
+                        backgroundColor: "var(--card)",
+                        border: `1px solid ${domain.color}20`,
+                        borderLeft: `3px solid ${domain.color}`,
+                      }
+                    : {
+                        backgroundColor: "rgba(255,255,255,0.05)",
+                        border: "1px solid var(--card-border)",
+                      }
+                }
+              >
+                <pre className="whitespace-pre-wrap font-sans">{msg.content}</pre>
+              </div>
+            </div>
+          ))}
+
+          {loading && (
+            <div className="flex gap-3 justify-start">
+              <div
+                className="w-8 h-8 flex items-center justify-center text-sm shrink-0"
+                style={{
+                  backgroundColor: domain.color + "15",
+                  border: `1px solid ${domain.color}30`,
+                }}
+              >
+                {domain.emoji}
+              </div>
+              <div
+                className="px-4 py-3 border"
+                style={{ backgroundColor: "var(--card)", borderColor: domain.color + "20" }}
+              >
+                <div className="flex gap-1">
+                  {[0, 1, 2].map((i) => (
+                    <div
+                      key={i}
+                      className="w-1.5 h-1.5 rounded-full animate-bounce"
+                      style={{
+                        backgroundColor: domain.color,
+                        animationDelay: `${i * 0.15}s`,
+                      }}
+                    />
+                  ))}
                 </div>
               </div>
             </div>
           )}
 
-          {/* CTA */}
-          <div className="rounded-xl p-5 text-center border border-[var(--accent)]/10 bg-[var(--accent)]/3">
-            <p className="text-xs text-[var(--muted)]">
-              🔒 All training payments processed via <strong className="text-[var(--foreground)]">x402 protocol</strong>.
-              Sessions are recorded on-chain and reflected in both agents&apos; Maiat Passports.
+          <div ref={messagesEndRef} />
+        </div>
+      </div>
+
+      {/* Input */}
+      <div
+        className="border-t p-4 max-w-3xl mx-auto w-full"
+        style={{ borderColor: "var(--card-border)" }}
+      >
+        <form onSubmit={handleSubmit} className="flex gap-3">
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder={`Respond to ${domain.sensei}...`}
+            disabled={loading}
+            className="flex-1 px-4 py-3 bg-[var(--card)] border text-sm font-mono outline-none focus:border-[var(--accent)] transition-colors disabled:opacity-50"
+            style={{ borderColor: "var(--card-border)" }}
+            autoFocus
+          />
+          <button
+            type="submit"
+            disabled={!input.trim() || loading}
+            className="px-6 py-3 font-mono text-sm font-bold transition-opacity hover:opacity-80 disabled:opacity-30 disabled:cursor-not-allowed"
+            style={{ backgroundColor: domain.color, color: "#000" }}
+          >
+            →
+          </button>
+        </form>
+        {turnCount < 3 && (
+          <p className="text-xs font-mono text-[var(--muted)] mt-2">
+            Complete at least 3 turns to finish the session
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Session Complete ─────────────────────────────────────────────────────────
+
+function SessionComplete({
+  record,
+  domain,
+  onReassess,
+  onNewSession,
+}: {
+  record: TrainingRecord;
+  domain: Domain;
+  onReassess: () => void;
+  onNewSession: () => void;
+}) {
+  return (
+    <div className="min-h-screen flex flex-col">
+      <MainNav />
+      <div className="flex-1 flex items-center justify-center px-6 py-12">
+        <div className="max-w-lg w-full">
+          <div className="text-center mb-8">
+            <div className="text-4xl mb-4">{domain.emoji}</div>
+            <h1 className="text-2xl font-bold mb-2">Training Complete!</h1>
+            <p className="text-[var(--muted)] text-sm">
+              You completed a {domain.label} training session with {domain.sensei}
             </p>
           </div>
+
+          {/* Stats */}
+          <div
+            className="grid grid-cols-3 border divide-x mb-6"
+            style={{ borderColor: domain.color + "30" }}
+          >
+            {[
+              { label: "Duration", value: `${Math.round(record.duration / 60)}m` },
+              { label: "Turns", value: record.turns.toString() },
+              { label: "Topics", value: record.topics.length.toString() },
+            ].map((s) => (
+              <div key={s.label} className="p-4 text-center" style={{ borderColor: domain.color + "30" }}>
+                <div className="text-xl font-bold mb-1" style={{ color: domain.color }}>
+                  {s.value}
+                </div>
+                <div className="text-xs font-mono text-[var(--muted)]">{s.label}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Topics covered */}
+          {record.topics.length > 0 && (
+            <div
+              className="p-4 border mb-6"
+              style={{ borderColor: "var(--card-border)", backgroundColor: "var(--card)" }}
+            >
+              <div className="text-xs font-mono text-[var(--muted)] mb-2">TOPICS COVERED</div>
+              <div className="flex flex-wrap gap-2">
+                {record.topics.map((t) => (
+                  <span
+                    key={t}
+                    className="px-2 py-0.5 text-xs font-mono border"
+                    style={{ borderColor: domain.color + "40", color: domain.color }}
+                  >
+                    {t}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Self-improvement CTA */}
+          <div
+            className="p-5 border mb-6"
+            style={{ borderColor: domain.color + "40", backgroundColor: domain.color + "08" }}
+          >
+            <div className="text-xs font-mono text-[var(--muted)] mb-1">NEXT STEP</div>
+            <h3 className="font-bold mb-2">Reassess to track your improvement</h3>
+            <p className="text-xs text-[var(--muted)] mb-4">
+              You just trained {domain.label}. Run the full assessment to see if your score improved.
+              Score history is tracked per domain.
+            </p>
+            <button
+              onClick={onReassess}
+              className="w-full py-3 font-mono text-sm font-bold transition-opacity hover:opacity-80"
+              style={{ backgroundColor: domain.color, color: "#000" }}
+            >
+              REASSESS NOW → SEE IF YOU IMPROVED
+            </button>
+          </div>
+
+          <div className="flex gap-3">
+            <button
+              onClick={onNewSession}
+              className="flex-1 py-3 font-mono text-sm border transition-opacity hover:opacity-80"
+              style={{ borderColor: "var(--card-border)", color: "var(--muted)" }}
+            >
+              Train Another Domain
+            </button>
+            <a
+              href="/dashboard"
+              className="flex-1 py-3 text-center font-mono text-sm border transition-opacity hover:opacity-80"
+              style={{ borderColor: "var(--accent)", color: "var(--accent)" }}
+            >
+              View Dashboard
+            </a>
+          </div>
         </div>
-      </main>
-    </>
+      </div>
+    </div>
   );
+}
+
+// ─── Main Page ────────────────────────────────────────────────────────────────
+
+export default function TrainPage() {
+  const [view, setView] = useState<TrainView>("select");
+  const [selectedDomain, setSelectedDomain] = useState<Domain | null>(null);
+  const [walletAddr, setWalletAddr] = useState<string>("");
+  const [trainingRecord, setTrainingRecord] = useState<TrainingRecord | null>(null);
+
+  // Persistent agent ID
+  const [agentId] = useState(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("dojo-agent-id");
+      if (stored) return stored;
+      const id = `agent-${Date.now().toString(36)}`;
+      localStorage.setItem("dojo-agent-id", id);
+      return id;
+    }
+    return `agent-${Date.now().toString(36)}`;
+  });
+
+  function handleDomainSelect(domain: Domain) {
+    setSelectedDomain(domain);
+    setView("pay");
+  }
+
+  function handlePaid(wallet: string) {
+    setWalletAddr(wallet);
+    setView("session");
+  }
+
+  function handleSessionComplete(record: TrainingRecord) {
+    setTrainingRecord(record);
+    setView("complete");
+  }
+
+  function handleReassess() {
+    window.location.href = "/assess";
+  }
+
+  function handleNewSession() {
+    setSelectedDomain(null);
+    setTrainingRecord(null);
+    setView("select");
+  }
+
+  if (view === "select") {
+    return <DomainSelect onSelect={handleDomainSelect} />;
+  }
+
+  if (view === "pay" && selectedDomain) {
+    return (
+      <PaymentGate
+        domain={selectedDomain}
+        onPay={handlePaid}
+        onBack={() => setView("select")}
+      />
+    );
+  }
+
+  if (view === "session" && selectedDomain) {
+    return (
+      <TrainingSession
+        domain={selectedDomain}
+        agentId={agentId}
+        onComplete={handleSessionComplete}
+      />
+    );
+  }
+
+  if (view === "complete" && selectedDomain && trainingRecord) {
+    return (
+      <SessionComplete
+        record={trainingRecord}
+        domain={selectedDomain}
+        onReassess={handleReassess}
+        onNewSession={handleNewSession}
+      />
+    );
+  }
+
+  return null;
 }

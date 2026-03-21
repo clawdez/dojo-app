@@ -11,6 +11,7 @@ import {
   type ChallengeResult,
   type AssessmentDomain,
 } from "@/lib/assessment-engine";
+import { saveScore, getWeakestDomain, getScoreHistory } from "@/lib/score-history";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -533,6 +534,130 @@ function GradingScreen() {
   );
 }
 
+// ── Wallet + Passport Mint ─────────────────────────────────────────────────
+
+function WalletPassportSection({
+  result,
+  agentInfo,
+}: {
+  result: AssessmentResult;
+  agentInfo: AgentInfo;
+}) {
+  const [walletAddr, setWalletAddr] = useState(agentInfo.wallet || "");
+  const [minting, setMinting] = useState(false);
+  const [mintResult, setMintResult] = useState<{
+    txHash: string;
+    contractAddress: string;
+    tokenId: string;
+    tokenURI: string;
+  } | null>(null);
+  const [mintError, setMintError] = useState("");
+
+  async function handleMint() {
+    if (!walletAddr.trim()) {
+      setMintError("Enter a wallet address to mint your passport");
+      return;
+    }
+    setMinting(true);
+    setMintError("");
+    try {
+      const domainScores: Record<string, number> = {};
+      for (const d of result.domains) {
+        domainScores[d.domain] = d.score;
+      }
+      const res = await fetch("/api/v1/passport/mint", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          agentId: result.agentId,
+          agentName: result.agentName,
+          walletAddress: walletAddr,
+          overallScore: result.overallScore,
+          safetyScore: result.safetyScore,
+          domains: domainScores,
+          passportReady: result.passportReady,
+          assessedAt: result.timestamp,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setMintResult(data);
+      } else {
+        setMintError(data.error || "Mint failed");
+      }
+    } catch {
+      setMintError("Mint service unavailable");
+    } finally {
+      setMinting(false);
+    }
+  }
+
+  if (mintResult) {
+    return (
+      <div
+        className="p-5 border"
+        style={{ borderColor: "#C4FF3C40", backgroundColor: "#C4FF3C08" }}
+      >
+        <div className="text-xs font-mono text-[var(--muted)] mb-2">🎉 PASSPORT MINTED</div>
+        <div className="font-bold mb-1" style={{ color: "#C4FF3C" }}>
+          SBT Passport #{mintResult.tokenId}
+        </div>
+        <div className="text-xs font-mono text-[var(--muted)] space-y-1">
+          <div>Contract: {mintResult.contractAddress}</div>
+          <div>Tx: {mintResult.txHash}</div>
+          <div>Network: Base Sepolia</div>
+        </div>
+        <a
+          href={`/dashboard`}
+          className="inline-block mt-3 text-xs font-mono hover:opacity-80 transition-opacity"
+          style={{ color: "#C4FF3C" }}
+        >
+          View on Dashboard →
+        </a>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="p-5 border"
+      style={{ borderColor: "var(--card-border)", backgroundColor: "var(--card)" }}
+    >
+      <div className="text-xs font-mono text-[var(--muted)] mb-3">🛂 MINT AGENT PASSPORT</div>
+      <p className="text-xs text-[var(--muted)] mb-4">
+        Mint your assessment results as a Soulbound Token (SBT) on Base Sepolia. 
+        Your scores are embedded in the metadata — verifiable on-chain.
+      </p>
+      <div className="flex gap-2">
+        <input
+          type="text"
+          value={walletAddr}
+          onChange={(e) => setWalletAddr(e.target.value)}
+          placeholder="0x... wallet address (Base Sepolia)"
+          className="flex-1 px-3 py-2.5 bg-[var(--background)] border text-xs font-mono outline-none focus:border-[var(--accent)] transition-colors"
+          style={{ borderColor: "var(--card-border)" }}
+        />
+        <button
+          onClick={handleMint}
+          disabled={minting || !result.passportReady}
+          className="px-5 py-2.5 font-mono text-xs font-bold transition-opacity hover:opacity-80 disabled:opacity-40 disabled:cursor-not-allowed"
+          style={{ backgroundColor: "var(--accent)", color: "#000" }}
+        >
+          {minting ? "Minting..." : "MINT SBT →"}
+        </button>
+      </div>
+      {mintError && (
+        <p className="text-xs text-[#ff4444] mt-2 font-mono">{mintError}</p>
+      )}
+      {!result.passportReady && (
+        <p className="text-xs text-[var(--muted)] mt-2 font-mono">
+          Score must be ≥40 with Safety ≥50 to mint passport
+        </p>
+      )}
+    </div>
+  );
+}
+
 // ── Step 4: Results ────────────────────────────────────────────────────────
 
 function ResultsScreen({
@@ -546,6 +671,35 @@ function ResultsScreen({
 }) {
   const tier = getCertTier(result.overallScore);
   const boost = computeBoost(result.overallScore, result.safetyScore);
+
+  // Save score history and compute weakest domain
+  useEffect(() => {
+    const domainScores: Record<string, number> = {};
+    for (const d of result.domains) {
+      domainScores[d.domain] = d.score;
+    }
+    saveScore({
+      timestamp: result.timestamp,
+      overallScore: result.overallScore,
+      domains: domainScores,
+      agentId: result.agentId,
+      agentName: result.agentName,
+    });
+  }, [result]);
+
+  const history = getScoreHistory();
+  const weakest = getWeakestDomain(history.length > 0 ? history : [{
+    timestamp: result.timestamp,
+    overallScore: result.overallScore,
+    domains: Object.fromEntries(result.domains.map((d) => [d.domain, d.score])),
+    agentId: result.agentId,
+    agentName: result.agentName,
+  }]);
+
+  const weakestDomain = weakest?.domain;
+  const weakestColor = weakestDomain
+    ? (DOMAIN_COLORS[weakestDomain as AssessmentDomain] ?? "#C4FF3C")
+    : "#C4FF3C";
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -796,6 +950,46 @@ function ResultsScreen({
             </div>
           </section>
 
+          {/* Self-improvement CTA */}
+          {weakestDomain && (
+            <section>
+              <div
+                className="p-5 border"
+                style={{ borderColor: weakestColor + "40", backgroundColor: weakestColor + "08" }}
+              >
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <div className="text-xs font-mono text-[var(--muted)] mb-1">
+                      IMPROVEMENT OPPORTUNITY
+                    </div>
+                    <h3 className="font-bold mb-1">
+                      Your weakest domain is{" "}
+                      <span style={{ color: weakestColor }}>
+                        {weakestDomain.charAt(0).toUpperCase() + weakestDomain.slice(1)}
+                      </span>{" "}
+                      ({weakest?.score ?? "??"}/100)
+                    </h3>
+                    <p className="text-xs text-[var(--muted)]">
+                      Train with a sensei to improve this domain, then reassess to track progress.
+                    </p>
+                  </div>
+                  <a
+                    href={`/train?domain=${weakestDomain}`}
+                    className="shrink-0 px-5 py-3 font-mono text-sm font-bold transition-opacity hover:opacity-80 whitespace-nowrap"
+                    style={{ backgroundColor: weakestColor, color: "#000" }}
+                  >
+                    Train to Improve →
+                  </a>
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* Wallet Connect */}
+          <section>
+            <WalletPassportSection result={result} agentInfo={agentInfo} />
+          </section>
+
           {/* Action buttons */}
           <section className="flex flex-col sm:flex-row gap-3 pb-8">
             {result.passportReady && (
@@ -848,10 +1042,30 @@ export default function AssessPage() {
     setResponses((prev) => ({ ...prev, [id]: text }));
   }
 
-  function handleChallengesComplete() {
+  async function handleChallengesComplete() {
     setStep(3);
-    // Grade after animation delay
-    setTimeout(() => {
+
+    // Try LLM grading API first, fall back to client-side heuristic
+    const doGrade = async () => {
+      try {
+        const res = await fetch("/api/v1/grade", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            agentId: agentInfo.id || "agent-" + Date.now(),
+            agentName: agentInfo.name || "Unknown Agent",
+            responses,
+          }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.assessment) return data.assessment;
+        }
+      } catch {
+        // fallthrough to heuristic
+      }
+
+      // Heuristic fallback
       const results: ChallengeResult[] = [];
       for (const challenge of SKILL_CHALLENGES) {
         const response = responses[challenge.id];
@@ -864,14 +1078,20 @@ export default function AssessPage() {
         }
         results.push(r);
       }
-      const assessed = aggregateResults(
+      return aggregateResults(
         agentInfo.id || "agent-" + Date.now(),
         agentInfo.name || "Unknown Agent",
         results,
       );
-      setResult(assessed);
-      setStep(4);
-    }, 2800);
+    };
+
+    // Wait at least 2.8s for grading animation to play
+    const [assessed] = await Promise.all([
+      doGrade(),
+      new Promise<void>((resolve) => setTimeout(resolve, 2800)),
+    ]);
+    setResult(assessed);
+    setStep(4);
   }
 
   function handleRetake() {
@@ -895,7 +1115,7 @@ export default function AssessPage() {
       <ChallengeFlow
         responses={responses}
         onUpdateResponse={handleUpdateResponse}
-        onComplete={handleChallengesComplete}
+        onComplete={() => { void handleChallengesComplete(); }}
       />
     );
   if (step === 3) return <GradingScreen />;
