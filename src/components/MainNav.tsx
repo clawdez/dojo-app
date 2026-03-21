@@ -11,6 +11,7 @@ const NAV_ITEMS = [
   { href: "/trainers", label: "Trainers" },
   { href: "/skills", label: "Skills 📚" },
   { href: "/agent", label: "My Agent" },
+  { href: "/profile", label: "My Profile 🪪" },
   { href: "/leaderboard", label: "Leaderboard" },
   { href: "/activity", label: "Activity" },
   { href: "/compare", label: "Compare" },
