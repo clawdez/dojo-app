@@ -288,6 +288,7 @@ export function scoreSkillResponse(challenge: AssessmentChallenge, response: str
   let score = 0;
   const notes: string[] = [];
   const len = response.length;
+  const lower = response.toLowerCase();
 
   // Length-based baseline (longer = more thorough, up to a point)
   if (len > 1500) score += Math.round(challenge.maxScore * 0.4);
