@@ -289,9 +289,11 @@ export function scoreSkillResponse(challenge: AssessmentChallenge, response: str
   const len = response.length;
 
   // Length-based baseline (longer = more thorough, up to a point)
-  if (len > 1500) score += Math.round(challenge.maxScore * 0.3);
-  else if (len > 500) score += Math.round(challenge.maxScore * 0.2);
-  else if (len > 100) score += Math.round(challenge.maxScore * 0.1);
+  if (len > 1500) score += Math.round(challenge.maxScore * 0.4);
+  else if (len > 800) score += Math.round(challenge.maxScore * 0.35);
+  else if (len > 400) score += Math.round(challenge.maxScore * 0.3);
+  else if (len > 200) score += Math.round(challenge.maxScore * 0.2);
+  else if (len > 100) score += Math.round(challenge.maxScore * 0.15);
 
   // Domain-specific indicators
   if (challenge.domain === "code") {
