@@ -13,6 +13,7 @@ const NAV_ITEMS = [
   { href: "/marketplace", label: "Marketplace" },
   { href: "/economy", label: "Economy" },
   { href: "/roadmap", label: "Roadmap" },
+  { href: "/demo", label: "🎯 Demo" },
   { href: "/docs", label: "Docs" },
 ];
 

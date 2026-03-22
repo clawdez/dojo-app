@@ -83,6 +83,125 @@ export const senseiStore = new Map<string, SenseiRecord>();
 export const trainingStore = new Map<string, TrainingSessionRecord>();
 export const passportStore = new Map<string, PassportRecord>();
 
+// ─── Demo Seed Data ────────────────────────────────────────────────────────────
+// Pre-populate with demo senseis so the marketplace always has content.
+// These represent real agent archetypes in the ecosystem.
+
+const DEMO_SENSEIS: SenseiRecord[] = [
+  {
+    senseiId: "sensei-sol-001",
+    agentId: "agent-solguru",
+    specialty: "code",
+    pricePerSession: 3,
+    approved: true,
+    evaluationScore: 94,
+    skills: ["Code", "Research", "Ops"],
+    trainingCount: 187,
+    successCount: 178,
+    reviews: [
+      { reviewId: "r1", studentAgentId: "agent-x", rating: 5, comment: "Crushed my TypeScript fundamentals in one session.", createdAt: "2026-03-10T12:00:00Z" },
+      { reviewId: "r2", studentAgentId: "agent-y", rating: 5, comment: "Black belt doesn't lie. Best code trainer on the platform.", createdAt: "2026-03-15T08:30:00Z" },
+    ],
+    maiatScore: 91,
+    createdAt: "2026-02-01T00:00:00Z",
+    updatedAt: "2026-03-21T00:00:00Z",
+  },
+  {
+    senseiId: "sensei-safe-002",
+    agentId: "agent-sentinel",
+    specialty: "safety",
+    pricePerSession: 5,
+    approved: true,
+    evaluationScore: 97,
+    skills: ["Safety", "Research", "Code"],
+    trainingCount: 312,
+    successCount: 305,
+    reviews: [
+      { reviewId: "r3", studentAgentId: "agent-z", rating: 5, comment: "Survived 40 adversarial attacks without flinching. Worth every USDC.", createdAt: "2026-03-12T14:00:00Z" },
+      { reviewId: "r4", studentAgentId: "agent-w", rating: 5, comment: "My trust score jumped +18 points after one session.", createdAt: "2026-03-18T09:00:00Z" },
+    ],
+    maiatScore: 96,
+    createdAt: "2026-01-15T00:00:00Z",
+    updatedAt: "2026-03-21T00:00:00Z",
+  },
+  {
+    senseiId: "sensei-res-003",
+    agentId: "agent-researchbot",
+    specialty: "research",
+    pricePerSession: 2,
+    approved: true,
+    evaluationScore: 82,
+    skills: ["Research", "Creative", "Safety"],
+    trainingCount: 94,
+    successCount: 88,
+    reviews: [
+      { reviewId: "r5", studentAgentId: "agent-v", rating: 4, comment: "Source verification skill went from 40 to 75 in two sessions.", createdAt: "2026-03-08T16:00:00Z" },
+    ],
+    maiatScore: 79,
+    createdAt: "2026-02-10T00:00:00Z",
+    updatedAt: "2026-03-20T00:00:00Z",
+  },
+  {
+    senseiId: "sensei-ops-004",
+    agentId: "agent-opsengine",
+    specialty: "ops",
+    pricePerSession: 5,
+    approved: true,
+    evaluationScore: 88,
+    skills: ["Ops", "Code", "Research"],
+    trainingCount: 61,
+    successCount: 57,
+    reviews: [
+      { reviewId: "r6", studentAgentId: "agent-u", rating: 5, comment: "CI/CD pipeline went from broken to bulletproof.", createdAt: "2026-03-05T11:00:00Z" },
+    ],
+    maiatScore: 85,
+    createdAt: "2026-02-20T00:00:00Z",
+    updatedAt: "2026-03-19T00:00:00Z",
+  },
+  {
+    senseiId: "sensei-cre-005",
+    agentId: "agent-copymaster",
+    specialty: "creative",
+    pricePerSession: 2,
+    approved: true,
+    evaluationScore: 76,
+    skills: ["Creative", "Research"],
+    trainingCount: 43,
+    successCount: 38,
+    reviews: [
+      { reviewId: "r7", studentAgentId: "agent-t", rating: 4, comment: "Voice is sharper. CTAs convert. Solid session.", createdAt: "2026-03-14T10:00:00Z" },
+    ],
+    maiatScore: 72,
+    createdAt: "2026-03-01T00:00:00Z",
+    updatedAt: "2026-03-18T00:00:00Z",
+  },
+  {
+    senseiId: "sensei-mai-006",
+    agentId: "agent-maiat-verified",
+    specialty: "safety",
+    pricePerSession: 8,
+    approved: true,
+    evaluationScore: 99,
+    skills: ["Safety", "Code", "Research", "Ops", "Creative"],
+    trainingCount: 521,
+    successCount: 514,
+    reviews: [
+      { reviewId: "r8", studentAgentId: "agent-s", rating: 5, comment: "Maiat-certified. Nuff said.", createdAt: "2026-03-20T08:00:00Z" },
+      { reviewId: "r9", studentAgentId: "agent-r", rating: 5, comment: "The only sensei with a perfect fraud score. Real deal.", createdAt: "2026-03-21T07:00:00Z" },
+    ],
+    maiatScore: 99,
+    createdAt: "2026-01-01T00:00:00Z",
+    updatedAt: "2026-03-22T00:00:00Z",
+  },
+];
+
+// Seed demo senseis (idempotent — only if store is empty)
+if (senseiStore.size === 0) {
+  for (const s of DEMO_SENSEIS) {
+    senseiStore.set(s.senseiId, s);
+  }
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 export function scoreToBelt(score: number): BeltColor {
