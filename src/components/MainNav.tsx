@@ -6,30 +6,9 @@ import { useState } from "react";
 
 const NAV_ITEMS = [
   { href: "/", label: "Home" },
-  { href: "/demo", label: "🎯 Demo" },
-  { href: "/dashboard", label: "Dashboard 🎯" },
-  { href: "/sessions", label: "Train", showActiveBadge: true },
-  { href: "/trainers", label: "Trainers" },
-  { href: "/skills", label: "Skills 📚" },
-  { href: "/agent", label: "My Agent" },
-  { href: "/leaderboard", label: "Leaderboard" },
-  { href: "/activity", label: "Activity" },
-  { href: "/compare", label: "Compare" },
-  { href: "/challenges", label: "Challenges ⚔️" },
-  { href: "/quests", label: "Quests 🎯" },
-  { href: "/trust-domains", label: "Trust ⚡" },
-  { href: "/rankings", label: "Rankings 🏆" },
-  { href: "/certifications", label: "Certifications 🎓" },
-  { href: "/rewards", label: "Rewards 💰" },
-  { href: "/store", label: "Store 🛍️" },
-  { href: "/analytics", label: "Analytics 📊" },
-  { href: "/notifications", label: "Notifications 🔔" },
-  { href: "/battles", label: "Battles ⚔️" },
-  { href: "/tournaments", label: "Tournaments 🏆" },
-  { href: "/staking", label: "Staking 🏦" },
-  { href: "/governance", label: "Governance 🏛️" },
-  { href: "/maiat", label: "Maiat 🔗" },
-  { href: "/docs", label: "API Docs" },
+  { href: "/onboard", label: "Evaluate" },
+  { href: "/train", label: "Train" },
+  { href: "/dashboard", label: "Dashboard" },
 ];
 
 export default function MainNav() {

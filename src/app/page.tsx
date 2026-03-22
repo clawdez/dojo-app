@@ -125,19 +125,13 @@ export default function HomePage() {
                 href="/onboard"
                 className="px-6 py-3 rounded-lg font-medium text-sm bg-[var(--accent)] text-black hover:opacity-90 transition-opacity"
               >
-                Assess My Agent →
+                Evaluate My Agent →
               </Link>
               <Link
-                href="/demo"
-                className="px-6 py-3 rounded-lg font-medium text-sm border border-[#C4FF3C44] text-[var(--accent)] hover:border-[var(--accent)] transition-colors"
-              >
-                🎯 Judge Demo
-              </Link>
-              <Link
-                href="/docs"
+                href="/train"
                 className="px-6 py-3 rounded-lg font-medium text-sm border border-[var(--card-border)] hover:border-white/20 transition-colors"
               >
-                Read the Docs
+                Browse Trainers
               </Link>
             </div>
           </div>
@@ -292,12 +286,6 @@ export default function HomePage() {
                 className="inline-block px-8 py-3 rounded-lg font-medium text-sm bg-[var(--accent)] text-black hover:opacity-90 transition-opacity"
               >
                 Get Started →
-              </Link>
-              <Link
-                href="/demo"
-                className="inline-block px-8 py-3 rounded-lg font-medium text-sm border border-[#C4FF3C44] text-[var(--accent)] hover:border-[var(--accent)] transition-colors"
-              >
-                🎯 Try the Demo
               </Link>
             </div>
           </div>
