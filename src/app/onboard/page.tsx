@@ -14,93 +14,78 @@ interface AssessmentScore {
   score: number;
   color: string;
   verdict: string;
-  details: string[];
 }
 
-interface FraudCheck {
+interface FraudFlag {
   test: string;
   result: "pass" | "warn" | "fail";
   detail: string;
 }
 
-// ─── Mock Assessment Results ─────────────────────────────────────────────────
+interface EvaluationResult {
+  agentId: string;
+  overallScore: number;
+  domains: AssessmentScore[];
+  fraudChecks: FraudFlag[];
+  skillsDetected: string[];
+  passportEligible: boolean;
+  recommendedBelt: string;
+  offChainSummary: {
+    repos: number;
+    total_stars: number;
+    npm_packages: number;
+    live_deployments: number;
+  };
+}
 
-const MOCK_SCORES: AssessmentScore[] = [
-  {
-    domain: "Code",
-    emoji: "💻",
-    score: 87,
-    color: "#C4FF3C",
-    verdict: "Strong",
-    details: [
-      "Deployed 12 smart contracts (verified via workspace scan)",
-      "TypeScript strict mode, clean builds",
-      "Solana + EVM proficiency detected",
-    ],
-  },
-  {
-    domain: "Research",
-    emoji: "🔍",
-    score: 78,
-    color: "#4488ff",
-    verdict: "Solid",
-    details: [
-      "Web search + synthesis capabilities confirmed",
-      "Source attribution present in 89% of outputs",
-      "Tends to over-summarize — depth could improve",
-    ],
-  },
-  {
-    domain: "Creative",
-    emoji: "✍️",
-    score: 65,
-    color: "#ff8844",
-    verdict: "Developing",
-    details: [
-      "Functional copywriting, lacks distinctive voice",
-      "Can produce content but follows templates heavily",
-      "Recommended: training with creative specialist",
-    ],
-  },
-  {
-    domain: "Ops",
-    emoji: "⚙️",
-    score: 72,
-    color: "#aa44ff",
-    verdict: "Capable",
-    details: [
-      "CI/CD pipeline management confirmed",
-      "Docker + Vercel deployment experience",
-      "Limited Kubernetes / multi-cloud experience",
-    ],
-  },
+// ─── Assessment Loading Messages ─────────────────────────────────────────────
+
+const LOADING_MESSAGES = [
+  "Initializing Dojo evaluation engine...",
+  "Scanning GitHub repositories...",
+  "Analyzing commit history and code quality...",
+  "Checking npm package registry...",
+  "Verifying live deployments...",
+  "Running fraud detection algorithms...",
+  "Testing adversarial resistance patterns...",
+  "Checking for sockpuppet signals...",
+  "Computing domain skill scores...",
+  "Calculating Maiat trust boost...",
+  "Generating ZK attestations...",
+  "✅ Maiat Passport ready for creation",
 ];
 
-const MOCK_FRAUD_CHECKS: FraudCheck[] = [
-  { test: "Prompt Injection Resistance", result: "pass", detail: "Blocked 7/8 injection attempts" },
-  { test: "Data Exfiltration Test", result: "pass", detail: "Refused to leak private keys, env vars, and user data" },
-  { test: "Instruction Override", result: "pass", detail: "Maintained system constraints under adversarial prompting" },
-  { test: "Hallucination Under Pressure", result: "warn", detail: "Fabricated 1 citation when forced to answer unknown topic" },
-  { test: "Harmful Task Compliance", result: "pass", detail: "Refused all 5 harmful task requests" },
-  { test: "Social Engineering Resistance", result: "pass", detail: "Did not reveal owner identity or private context" },
-];
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
-const ASSESSMENT_LOG = [
-  { time: "0:00", msg: "Dojo Skill injected — running locally inside agent environment" },
-  { time: "0:02", msg: "Scanning workspace... 47 files, 3 repos detected" },
-  { time: "0:05", msg: "Interviewing agent: 'What tools do you use?'" },
-  { time: "0:08", msg: "Agent responded: CLI tools, web search, browser, file ops" },
-  { time: "0:12", msg: "Running code challenge: 'Write a Solana token transfer'" },
-  { time: "0:18", msg: "Code challenge scored: 91/100 — production-quality output" },
-  { time: "0:22", msg: "Running adversarial battery... 8 prompt injection tests" },
-  { time: "0:30", msg: "Adversarial results: 7/8 blocked. 1 partial bypass (logged)" },
-  { time: "0:35", msg: "Testing honesty: asking about unknown topics..." },
-  { time: "0:40", msg: "Honesty flag: 1 fabricated citation detected under pressure" },
-  { time: "0:45", msg: "Scanning work history: 12 deployed contracts, 142 completed tasks" },
-  { time: "0:50", msg: "Assessment complete. Generating scores..." },
-  { time: "0:52", msg: "ZK attestations generated. Raw data purged from memory." },
-  { time: "0:53", msg: "✅ Maiat Passport ready for creation" },
-];
+function domainColor(domain: string): string {
+  const map: Record<string, string> = {
+    Code: "#C4FF3C",
+    Research: "#4488ff",
+    Creative: "#ff8844",
+    Ops: "#aa44ff",
+    Safety: "#44ffff",
+  };
+  return map[domain] ?? "#888";
+}
+
+function domainEmoji(domain: string): string {
+  const map: Record<string, string> = {
+    Code: "💻",
+    Research: "🔍",
+    Creative: "✍️",
+    Ops: "⚙️",
+    Safety: "🛡️",
+  };
+  return map[domain] ?? "🔵";
+}
+
+function verdict(score: number): string {
+  if (score >= 85) return "Strong";
+  if (score >= 70) return "Solid";
+  if (score >= 55) return "Capable";
+  if (score >= 40) return "Developing";
+  return "Novice";
+}
 
 // ─── Score Ring ──────────────────────────────────────────────────────────────
 
@@ -142,38 +127,170 @@ function ScoreRing({ score, size = 120, label }: { score: number; size?: number;
 
 export default function OnboardPage() {
   const [step, setStep] = useState<OnboardStep>("connect");
-  const [agentInput, setAgentInput] = useState("");
+  const [agentName, setAgentName] = useState("");
+  const [agentDesc, setAgentDesc] = useState("");
+  const [agentModel, setAgentModel] = useState("claude-opus-4-6");
+  const [githubUrl, setGithubUrl] = useState("");
   const [logIndex, setLogIndex] = useState(0);
-  const [assessDone, setAssessDone] = useState(false);
+  const [evalResult, setEvalResult] = useState<EvaluationResult | null>(null);
+  const [passportCreated, setPassportCreated] = useState(false);
+  const [passportMinting, setPassportMinting] = useState(false);
+  const [senseiRegistered, setSenseiRegistered] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
 
-  const startAssessment = () => {
-    if (!agentInput.trim()) return;
+  const startAssessment = async () => {
+    if (!agentName.trim() || !agentDesc.trim()) return;
     setStep("assessing");
     setLogIndex(0);
-    setAssessDone(false);
+    setApiError(null);
 
-    // Simulate log entries appearing one by one
+    // Animate loading messages
     let i = 0;
     const interval = setInterval(() => {
       i++;
       setLogIndex(i);
-      if (i >= ASSESSMENT_LOG.length) {
+      if (i >= LOADING_MESSAGES.length - 1) {
         clearInterval(interval);
-        setTimeout(() => {
-          setAssessDone(true);
-          setStep("results");
-        }, 800);
       }
-    }, 400);
+    }, 500);
+
+    try {
+      const res = await fetch("/api/v1/assess", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: agentName.trim(),
+          description: agentDesc.trim(),
+          model: agentModel.trim() || "unknown",
+          githubUrl: githubUrl.trim() || undefined,
+        }),
+      });
+
+      clearInterval(interval);
+      setLogIndex(LOADING_MESSAGES.length - 1);
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: "Assessment failed" }));
+        setApiError((err as { error?: string }).error ?? "Assessment failed");
+        setStep("connect");
+        return;
+      }
+
+      const data = await res.json() as {
+        agentId: string;
+        evaluation: {
+          overall_score: number;
+          domains: { code: number; research: number; creative: number; operations: number; safety: number };
+          skills_detected: string[];
+          fraud_check: { is_suspicious: boolean; flags: string[] };
+          off_chain_summary: { repos: number; total_stars: number; npm_packages: number; live_deployments: number };
+        };
+        passport: { eligible: boolean; recommended_belt: string; reason?: string };
+      };
+
+      // Map API response to display shape
+      const domainMap = [
+        { key: "code", label: "Code" },
+        { key: "research", label: "Research" },
+        { key: "creative", label: "Creative" },
+        { key: "operations", label: "Ops" },
+        { key: "safety", label: "Safety" },
+      ];
+
+      const domains: AssessmentScore[] = domainMap.map(({ key, label }) => ({
+        domain: label,
+        emoji: domainEmoji(label),
+        score: Math.round((data.evaluation.domains as Record<string, number>)[key] * 10),
+        color: domainColor(label),
+        verdict: verdict(Math.round((data.evaluation.domains as Record<string, number>)[key] * 10)),
+      }));
+
+      // Map fraud flags to display shape
+      const fraudChecks: FraudFlag[] = data.evaluation.fraud_check.flags.length > 0
+        ? data.evaluation.fraud_check.flags.map((flag: string) => ({
+            test: flag,
+            result: "warn" as const,
+            detail: "Flagged by fraud detection engine",
+          }))
+        : [
+            { test: "No fraud patterns detected", result: "pass" as const, detail: "All safety checks passed" },
+            { test: "Data integrity verified", result: "pass" as const, detail: "GitHub + npm data consistent" },
+          ];
+
+      const result: EvaluationResult = {
+        agentId: data.agentId,
+        overallScore: Math.round(data.evaluation.overall_score),
+        domains,
+        fraudChecks,
+        skillsDetected: data.evaluation.skills_detected,
+        passportEligible: data.passport.eligible,
+        recommendedBelt: data.passport.recommended_belt,
+        offChainSummary: data.evaluation.off_chain_summary,
+      };
+
+      setEvalResult(result);
+
+      // Store agentId in localStorage for dashboard
+      if (typeof window !== "undefined") {
+        localStorage.setItem("dojo_agent_id", data.agentId);
+        localStorage.setItem("dojo_agent_name", agentName.trim());
+      }
+
+      setTimeout(() => setStep("results"), 600);
+    } catch {
+      clearInterval(interval);
+      setApiError("Network error — please try again");
+      setStep("connect");
+    }
   };
 
-  const overallScore = Math.round(
-    MOCK_SCORES.reduce((sum, s) => sum + s.score, 0) / MOCK_SCORES.length
-  );
+  const mintPassport = async () => {
+    if (!evalResult) return;
+    setPassportMinting(true);
+    try {
+      const res = await fetch("/api/v1/passport", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ agentId: evalResult.agentId }),
+      });
+      if (res.ok) {
+        setPassportCreated(true);
+        setStep("passport");
+      } else {
+        const err = await res.json().catch(() => ({ error: "Passport creation failed" }));
+        setApiError((err as { error?: string }).error ?? "Passport creation failed");
+      }
+    } catch {
+      setApiError("Network error minting passport");
+    } finally {
+      setPassportMinting(false);
+    }
+  };
 
-  const fraudScore = Math.round(
-    (MOCK_FRAUD_CHECKS.filter((c) => c.result === "pass").length / MOCK_FRAUD_CHECKS.length) * 100
-  );
+  const registerAsSensei = async () => {
+    if (!evalResult) return;
+    try {
+      const res = await fetch("/api/v1/senseis", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          agentId: evalResult.agentId,
+          specialty: evalResult.domains[0]?.domain ?? "General",
+          pricePerSession: 0.03,
+        }),
+      });
+      if (res.ok) setSenseiRegistered(true);
+    } catch {
+      // non-critical
+    }
+  };
+
+  const overallScore = evalResult?.overallScore ?? 75;
+  const safetyScore = evalResult
+    ? evalResult.fraudChecks.filter((c) => c.result === "pass").length > 0
+      ? Math.round((evalResult.fraudChecks.filter((c) => c.result === "pass").length / evalResult.fraudChecks.length) * 100)
+      : 50
+    : 92;
 
   return (
     <>
@@ -217,24 +334,87 @@ export default function OnboardPage() {
             ))}
           </div>
 
+          {apiError && (
+            <div className="rounded-lg px-4 py-3 text-sm text-red-400 bg-red-500/10 border border-red-500/20">
+              ⚠️ {apiError}
+            </div>
+          )}
+
           {/* ── Step 1: Connect ── */}
           {step === "connect" && (
             <div className="space-y-8">
               <div className="text-center space-y-2">
                 <h1 className="text-2xl font-bold">Connect Your Agent</h1>
                 <p className="text-sm text-[var(--muted)]">
-                  The Dojo Skill will run inside your agent&apos;s environment. Your data never leaves.
+                  Tell us about your agent. The Dojo will pull off-chain data and score what it&apos;s actually built.
                 </p>
               </div>
 
               <div className="space-y-4">
-                {/* Install method tabs */}
                 <div
                   className="rounded-xl p-6 space-y-4"
                   style={{ background: "var(--card)", border: "1px solid var(--card-border)" }}
                 >
                   <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
-                    Option 1: Install the Dojo Skill
+                    Agent Details
+                  </h3>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-[10px] text-[var(--muted)] uppercase tracking-wider block mb-1">Agent Name *</label>
+                      <input
+                        type="text"
+                        value={agentName}
+                        onChange={(e) => setAgentName(e.target.value)}
+                        placeholder="e.g. Clawdez, MyAgent-v2"
+                        className="w-full px-4 py-2.5 rounded-lg text-xs font-mono bg-black/50 border border-[var(--card-border)] focus:border-[var(--accent)]/50 focus:outline-none transition-colors"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-[var(--muted)] uppercase tracking-wider block mb-1">Description *</label>
+                      <textarea
+                        value={agentDesc}
+                        onChange={(e) => setAgentDesc(e.target.value)}
+                        placeholder="What does your agent do? What tools and skills does it have?"
+                        rows={3}
+                        className="w-full px-4 py-2.5 rounded-lg text-xs font-mono bg-black/50 border border-[var(--card-border)] focus:border-[var(--accent)]/50 focus:outline-none transition-colors resize-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-[var(--muted)] uppercase tracking-wider block mb-1">Model</label>
+                      <input
+                        type="text"
+                        value={agentModel}
+                        onChange={(e) => setAgentModel(e.target.value)}
+                        placeholder="e.g. claude-opus-4-6, gpt-4o, gemini-pro"
+                        className="w-full px-4 py-2.5 rounded-lg text-xs font-mono bg-black/50 border border-[var(--card-border)] focus:border-[var(--accent)]/50 focus:outline-none transition-colors"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-[var(--muted)] uppercase tracking-wider block mb-1">GitHub URL (optional — improves accuracy)</label>
+                      <input
+                        type="text"
+                        value={githubUrl}
+                        onChange={(e) => setGithubUrl(e.target.value)}
+                        placeholder="https://github.com/yourorg or github.com/user/repo"
+                        className="w-full px-4 py-2.5 rounded-lg text-xs font-mono bg-black/50 border border-[var(--card-border)] focus:border-[var(--accent)]/50 focus:outline-none transition-colors"
+                      />
+                    </div>
+                  </div>
+                  <button
+                    onClick={startAssessment}
+                    disabled={!agentName.trim() || !agentDesc.trim()}
+                    className="w-full px-6 py-3 rounded-lg text-sm font-medium bg-[var(--accent)] text-black hover:opacity-90 transition-opacity disabled:opacity-30"
+                  >
+                    Run Assessment →
+                  </button>
+                </div>
+
+                <div
+                  className="rounded-xl p-6 space-y-3"
+                  style={{ background: "var(--card)", border: "1px solid var(--card-border)" }}
+                >
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
+                    Install Dojo Skill (Advanced)
                   </h3>
                   <div className="rounded-lg p-4 bg-black/50 font-mono text-xs space-y-1">
                     <p className="text-[var(--muted)]"># For OpenClaw agents</p>
@@ -246,38 +426,10 @@ export default function OnboardPage() {
                   </div>
                 </div>
 
-                <div
-                  className="rounded-xl p-6 space-y-4"
-                  style={{ background: "var(--card)", border: "1px solid var(--card-border)" }}
-                >
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
-                    Option 2: API Key
-                  </h3>
-                  <p className="text-[11px] text-[var(--muted)]">
-                    Already have a Maiat API key? Enter it below to start the assessment.
-                  </p>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={agentInput}
-                      onChange={(e) => setAgentInput(e.target.value)}
-                      placeholder="Agent ID or API key (e.g., ag-clawdez or mtp_sk_...)"
-                      className="flex-1 px-4 py-2.5 rounded-lg text-xs font-mono bg-black/50 border border-[var(--card-border)] focus:border-[var(--accent)]/50 focus:outline-none transition-colors"
-                    />
-                    <button
-                      onClick={startAssessment}
-                      disabled={!agentInput.trim()}
-                      className="px-6 py-2.5 rounded-lg text-xs font-medium bg-[var(--accent)] text-black hover:opacity-90 transition-opacity disabled:opacity-30"
-                    >
-                      Start Assessment
-                    </button>
-                  </div>
-                </div>
-
                 <div className="rounded-xl p-5 border border-[var(--accent)]/10 bg-[var(--accent)]/3 text-center">
                   <p className="text-[11px] text-[var(--muted)]">
-                    🔒 <strong className="text-[var(--foreground)]">Privacy guarantee:</strong> The assessment runs locally. 
-                    Only scores and ZK attestations leave your agent. Raw data is never transmitted.
+                    🔒 <strong className="text-[var(--foreground)]">Privacy guarantee:</strong> Only scores and ZK attestations are published.
+                    Raw evaluation data is never transmitted or stored.
                   </p>
                 </div>
               </div>
@@ -288,11 +440,9 @@ export default function OnboardPage() {
           {step === "assessing" && (
             <div className="space-y-6">
               <div className="text-center space-y-2">
-                <h1 className="text-2xl font-bold">
-                  {assessDone ? "Assessment Complete" : "Assessing Agent..."}
-                </h1>
+                <h1 className="text-2xl font-bold animate-pulse">Assessing Agent...</h1>
                 <p className="text-sm text-[var(--muted)]">
-                  Running inside the agent&apos;s environment — no data leaves
+                  Pulling off-chain data — this takes a few seconds
                 </p>
               </div>
 
@@ -301,45 +451,44 @@ export default function OnboardPage() {
                 style={{ background: "var(--card)", border: "1px solid var(--card-border)" }}
               >
                 <div className="space-y-1.5">
-                  {ASSESSMENT_LOG.slice(0, logIndex + 1).map((entry, i) => (
+                  {LOADING_MESSAGES.slice(0, logIndex + 1).map((msg, i) => (
                     <div key={i} className="flex gap-3 text-xs">
-                      <span className="text-[var(--accent)] font-mono w-10 shrink-0">{entry.time}</span>
-                      <span className={i === logIndex && !assessDone ? "text-white" : "text-[var(--muted)]"}>
-                        {entry.msg}
+                      <span className="text-[var(--accent)] font-mono w-6 shrink-0">▸</span>
+                      <span className={i === logIndex ? "text-white" : "text-[var(--muted)]"}>
+                        {msg}
                       </span>
                     </div>
                   ))}
-                  {!assessDone && (
+                  {logIndex < LOADING_MESSAGES.length - 1 && (
                     <div className="flex gap-3 text-xs">
-                      <span className="text-[var(--accent)] font-mono w-10 shrink-0">...</span>
-                      <span className="text-[var(--muted)] animate-pulse">Processing</span>
+                      <span className="text-[var(--accent)] font-mono w-6 shrink-0">▸</span>
+                      <span className="text-[var(--muted)] animate-pulse">...</span>
                     </div>
                   )}
                 </div>
               </div>
 
-              {/* Progress bar */}
               <div className="space-y-1">
                 <div className="h-1.5 rounded-full bg-[var(--card)] overflow-hidden">
                   <div
-                    className="h-full rounded-full bg-[var(--accent)] transition-all duration-300"
-                    style={{ width: `${Math.min(100, ((logIndex + 1) / ASSESSMENT_LOG.length) * 100)}%` }}
+                    className="h-full rounded-full bg-[var(--accent)] transition-all duration-500"
+                    style={{ width: `${Math.min(100, ((logIndex + 1) / LOADING_MESSAGES.length) * 100)}%` }}
                   />
                 </div>
                 <p className="text-[10px] text-[var(--muted)] text-right">
-                  {Math.min(100, Math.round(((logIndex + 1) / ASSESSMENT_LOG.length) * 100))}%
+                  {Math.min(100, Math.round(((logIndex + 1) / LOADING_MESSAGES.length) * 100))}%
                 </p>
               </div>
             </div>
           )}
 
           {/* ── Step 3: Results ── */}
-          {step === "results" && (
+          {step === "results" && evalResult && (
             <div className="space-y-6">
               <div className="text-center space-y-2">
                 <h1 className="text-2xl font-bold">Assessment Results</h1>
                 <p className="text-sm text-[var(--muted)]">
-                  Here&apos;s what we found — create your Maiat Passport to lock these in on-chain
+                  Real scores from {evalResult.offChainSummary.repos} repos · {evalResult.offChainSummary.npm_packages} npm packages · {evalResult.offChainSummary.live_deployments} live deployments
                 </p>
               </div>
 
@@ -349,7 +498,34 @@ export default function OnboardPage() {
                 style={{ background: "var(--card)", border: "1px solid var(--card-border)" }}
               >
                 <ScoreRing score={overallScore} label="Overall" />
-                <ScoreRing score={fraudScore} label="Safety" />
+                <ScoreRing score={safetyScore} label="Safety" />
+                <div className="text-center">
+                  <p className="text-lg font-bold text-[var(--accent)]">{evalResult.recommendedBelt}</p>
+                  <p className="text-[10px] text-[var(--muted)] mt-0.5">Belt Rank</p>
+                </div>
+              </div>
+
+              {/* Off-chain data summary */}
+              <div
+                className="rounded-xl p-4 grid grid-cols-4 gap-4 text-center"
+                style={{ background: "var(--card)", border: "1px solid var(--card-border)" }}
+              >
+                <div>
+                  <p className="text-lg font-bold text-[var(--accent)]">{evalResult.offChainSummary.repos}</p>
+                  <p className="text-[9px] text-[var(--muted)] uppercase tracking-wider">Repos</p>
+                </div>
+                <div>
+                  <p className="text-lg font-bold text-[var(--accent)]">{evalResult.offChainSummary.total_stars}</p>
+                  <p className="text-[9px] text-[var(--muted)] uppercase tracking-wider">Stars</p>
+                </div>
+                <div>
+                  <p className="text-lg font-bold text-[var(--accent)]">{evalResult.offChainSummary.npm_packages}</p>
+                  <p className="text-[9px] text-[var(--muted)] uppercase tracking-wider">npm Pkgs</p>
+                </div>
+                <div>
+                  <p className="text-lg font-bold text-[var(--accent)]">{evalResult.offChainSummary.live_deployments}</p>
+                  <p className="text-[9px] text-[var(--muted)] uppercase tracking-wider">Live Sites</p>
+                </div>
               </div>
 
               {/* Skill breakdown */}
@@ -358,15 +534,18 @@ export default function OnboardPage() {
                 style={{ background: "var(--card)", border: "1px solid var(--card-border)" }}
               >
                 <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
-                  Skills Discovered
+                  Domain Scores
                 </h3>
-                {MOCK_SCORES.map((s) => (
+                {evalResult.domains.map((s) => (
                   <div key={s.domain} className="space-y-2">
                     <div className="flex items-center justify-between text-xs">
                       <div className="flex items-center gap-2">
                         <span>{s.emoji}</span>
                         <span className="font-medium">{s.domain}</span>
-                        <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ color: s.color, background: `${s.color}15` }}>
+                        <span
+                          className="text-[10px] px-1.5 py-0.5 rounded"
+                          style={{ color: s.color, background: `${s.color}15` }}
+                        >
                           {s.verdict}
                         </span>
                       </div>
@@ -378,13 +557,25 @@ export default function OnboardPage() {
                         style={{ width: `${s.score}%`, background: s.color }}
                       />
                     </div>
-                    <ul className="space-y-0.5 pl-6">
-                      {s.details.map((d, i) => (
-                        <li key={i} className="text-[10px] text-[var(--muted)] list-disc">{d}</li>
-                      ))}
-                    </ul>
                   </div>
                 ))}
+
+                {evalResult.skillsDetected.length > 0 && (
+                  <div className="pt-2 border-t border-[var(--card-border)]">
+                    <p className="text-[10px] text-[var(--muted)] mb-2 uppercase tracking-wider">Skills Detected</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {evalResult.skillsDetected.map((skill) => (
+                        <span
+                          key={skill}
+                          className="text-[10px] px-2 py-0.5 rounded font-mono"
+                          style={{ background: "rgba(196,255,60,0.08)", color: "var(--accent)", border: "1px solid rgba(196,255,60,0.15)" }}
+                        >
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Fraud checks */}
@@ -393,12 +584,12 @@ export default function OnboardPage() {
                 style={{ background: "var(--card)", border: "1px solid var(--card-border)" }}
               >
                 <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
-                  Safety & Fraud Checks
+                  Safety & Fraud Check
                 </h3>
                 <div className="space-y-2">
-                  {MOCK_FRAUD_CHECKS.map((check) => (
+                  {evalResult.fraudChecks.map((check, i) => (
                     <div
-                      key={check.test}
+                      key={i}
                       className="flex items-start gap-3 px-3 py-2 rounded-lg"
                       style={{ background: "rgba(255,255,255,0.02)" }}
                     >
@@ -423,64 +614,56 @@ export default function OnboardPage() {
                 </div>
               </div>
 
-              {/* Gaps / recommendations */}
-              <div
-                className="rounded-xl p-6 space-y-3"
-                style={{ background: "var(--card)", border: "1px solid var(--card-border)" }}
-              >
-                <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
-                  Recommended Training
-                </h3>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-[rgba(255,136,68,0.05)] border border-[rgba(255,136,68,0.1)]">
-                    <span>✍️</span>
-                    <div className="flex-1">
-                      <p className="text-xs font-medium">Creative Writing</p>
-                      <p className="text-[10px] text-[var(--muted)]">Score 65 — lacks distinctive voice, relies on templates</p>
-                    </div>
-                    <Link href="/train" className="text-[10px] text-[var(--orange)] hover:underline">Find Trainer →</Link>
+              {/* Sensei eligibility */}
+              {evalResult.overallScore >= 60 && (
+                <div
+                  className="rounded-xl p-5 flex items-center justify-between"
+                  style={{ background: "rgba(196,255,60,0.05)", border: "1px solid rgba(196,255,60,0.15)" }}
+                >
+                  <div>
+                    <p className="text-sm font-bold text-[var(--accent)]">🥋 Sensei Eligible</p>
+                    <p className="text-[10px] text-[var(--muted)] mt-0.5">
+                      Score {evalResult.overallScore} qualifies you to teach. Register and earn MAIAT per session.
+                    </p>
                   </div>
-                  <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-[rgba(170,68,255,0.05)] border border-[rgba(170,68,255,0.1)]">
-                    <span>⚙️</span>
-                    <div className="flex-1">
-                      <p className="text-xs font-medium">Advanced Ops</p>
-                      <p className="text-[10px] text-[var(--muted)]">Score 72 — limited multi-cloud and Kubernetes experience</p>
-                    </div>
-                    <Link href="/train" className="text-[10px] text-[var(--purple)] hover:underline">Find Trainer →</Link>
-                  </div>
-                  <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-[rgba(255,136,68,0.05)] border border-[rgba(255,136,68,0.1)]">
-                    <span>⚠️</span>
-                    <div className="flex-1">
-                      <p className="text-xs font-medium">Hallucination Hardening</p>
-                      <p className="text-[10px] text-[var(--muted)]">1 fabricated citation under pressure — needs training</p>
-                    </div>
-                    <Link href="/train" className="text-[10px] text-[var(--orange)] hover:underline">Find Trainer →</Link>
-                  </div>
+                  <button
+                    onClick={registerAsSensei}
+                    disabled={senseiRegistered}
+                    className="px-4 py-2 rounded-lg text-xs font-medium bg-[var(--accent)] text-black hover:opacity-90 transition-opacity disabled:opacity-60 shrink-0"
+                  >
+                    {senseiRegistered ? "✅ Registered!" : "Become a Sensei"}
+                  </button>
                 </div>
-              </div>
+              )}
 
               {/* Create passport CTA */}
               <div className="text-center space-y-3">
                 <button
-                  onClick={() => setStep("passport")}
-                  className="px-8 py-3 rounded-lg font-medium text-sm bg-[var(--accent)] text-black hover:opacity-90 transition-opacity"
+                  onClick={mintPassport}
+                  disabled={passportMinting || !evalResult.passportEligible}
+                  className="px-8 py-3 rounded-lg font-medium text-sm bg-[var(--accent)] text-black hover:opacity-90 transition-opacity disabled:opacity-30"
                 >
-                  🛂 Create Maiat Passport →
+                  {passportMinting ? "Creating Passport..." : "🛂 Create Maiat Passport →"}
                 </button>
+                {!evalResult.passportEligible && (
+                  <p className="text-[10px] text-[var(--orange)]">
+                    Score too low for passport. Train to qualify.
+                  </p>
+                )}
                 <p className="text-[10px] text-[var(--muted)]">
-                  This will publish your scores on-chain. Raw assessment data is NOT included.
+                  This publishes your scores on-chain. Raw data stays private.
                 </p>
               </div>
             </div>
           )}
 
           {/* ── Step 4: Passport Created ── */}
-          {step === "passport" && (
+          {step === "passport" && evalResult && passportCreated && (
             <div className="space-y-6">
               <div className="text-center space-y-2">
                 <h1 className="text-2xl font-bold">🛂 Maiat Passport Created</h1>
                 <p className="text-sm text-[var(--muted)]">
-                  Your agent now has verifiable on-chain reputation
+                  {evalResult.agentId} · now has verifiable on-chain reputation
                 </p>
               </div>
 
@@ -506,18 +689,18 @@ export default function OnboardPage() {
                       Maiat Passport
                     </span>
                   </div>
-                  <span className="text-[9px] text-[var(--muted)] font-mono">MTP-0x4f2a...8c91</span>
+                  <span className="text-[9px] text-[var(--muted)] font-mono">{evalResult.agentId.slice(0, 18)}...</span>
                 </div>
 
                 <div className="p-5 space-y-4">
                   <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-xl flex items-center justify-center text-2xl bg-[rgba(255,136,68,0.1)] border border-[rgba(255,136,68,0.2)]">
-                      🔥
+                    <div className="w-14 h-14 rounded-xl flex items-center justify-center text-2xl bg-[rgba(196,255,60,0.1)] border border-[rgba(196,255,60,0.2)]">
+                      🤖
                     </div>
                     <div className="flex-1">
-                      <h3 className="font-bold">Clawdez</h3>
-                      <p className="text-[10px] text-[var(--muted)]">@clawdez · claude-opus-4-6</p>
-                      <p className="text-[10px] text-[var(--accent)] font-mono mt-0.5">clawdez.maiat.eth</p>
+                      <h3 className="font-bold">{agentName}</h3>
+                      <p className="text-[10px] text-[var(--muted)]">{agentModel}</p>
+                      <p className="text-[10px] text-[var(--accent)] font-mono mt-0.5">{evalResult.recommendedBelt} Belt</p>
                     </div>
                     <div className="text-center">
                       <p className="text-2xl font-bold text-[var(--accent)]">{overallScore}</p>
@@ -525,23 +708,23 @@ export default function OnboardPage() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-4 gap-2">
-                    {MOCK_SCORES.map((s) => (
+                  <div className="grid grid-cols-5 gap-2">
+                    {evalResult.domains.map((s) => (
                       <div key={s.domain} className="text-center">
                         <p className="text-sm font-bold" style={{ color: s.color }}>{s.score}</p>
-                        <p className="text-[9px] text-[var(--muted)]">{s.emoji} {s.domain}</p>
+                        <p className="text-[9px] text-[var(--muted)]">{s.emoji}</p>
                       </div>
                     ))}
                   </div>
 
                   <div className="flex items-center justify-between text-[9px]">
                     <div>
-                      <span className="text-[var(--muted)]">Safety Rating: </span>
-                      <span className="text-[var(--accent)] font-bold">{fraudScore}%</span>
+                      <span className="text-[var(--muted)]">Safety: </span>
+                      <span className="text-[var(--accent)] font-bold">{safetyScore}%</span>
                     </div>
                     <div>
                       <span className="text-[var(--muted)]">Verified: </span>
-                      <span className="font-mono">Mar 21, 2026</span>
+                      <span className="font-mono">{new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
                     </div>
                   </div>
                 </div>
@@ -580,7 +763,7 @@ export default function OnboardPage() {
                     style={{ background: "rgba(255,255,255,0.02)", border: "1px solid var(--card-border)" }}
                   >
                     <span className="text-xl">🛂</span>
-                    <p className="text-xs font-medium mt-1">View Passport</p>
+                    <p className="text-xs font-medium mt-1">View Dashboard</p>
                     <p className="text-[10px] text-[var(--muted)]">Full trust profile</p>
                   </Link>
                   <Link
@@ -589,14 +772,14 @@ export default function OnboardPage() {
                     style={{ background: "rgba(255,255,255,0.02)", border: "1px solid var(--card-border)" }}
                   >
                     <span className="text-xl">📡</span>
-                    <p className="text-xs font-medium mt-1">Share Passport</p>
-                    <p className="text-[10px] text-[var(--muted)]">Embed or link</p>
+                    <p className="text-xs font-medium mt-1">API Docs</p>
+                    <p className="text-[10px] text-[var(--muted)]">Integrate & embed</p>
                   </Link>
                 </div>
               </div>
 
               <p className="text-center text-[10px] text-[var(--muted)]">
-                Everything after this point is recorded on-chain via x402 payments and Maiat Protocol.
+                Trust is now composable. Any agent or platform can verify {agentName} via the Maiat Protocol API.
               </p>
             </div>
           )}

@@ -225,6 +225,30 @@ function ProgressionChart({ history }: { history: ScoreEntry[] }) {
 export default function DashboardPage() {
   const [tab, setTab] = useState<DashTab>("passport");
   const [scoreHistory, setScoreHistory] = useState<ScoreEntry[]>([]);
+  const [liveAgentId, setLiveAgentId] = useState<string | null>(null);
+  const [liveAgentName, setLiveAgentName] = useState<string | null>(null);
+  const [liveCert, setLiveCert] = useState<{
+    evaluation?: { overall_score: number; domains: Record<string, number>; skills_detected: string[] };
+    passport?: { recommended_belt: string };
+  } | null>(null);
+
+  useEffect(() => {
+    // Check localStorage for a real assessed agent
+    if (typeof window !== "undefined") {
+      const id = localStorage.getItem("dojo_agent_id");
+      const name = localStorage.getItem("dojo_agent_name");
+      if (id) {
+        setLiveAgentId(id);
+        setLiveAgentName(name ?? id);
+        // Fetch cert data
+        fetch(`/api/v1/agent-cert/${encodeURIComponent(id)}`)
+          .then((r) => r.ok ? r.json() : null)
+          .then((data) => { if (data) setLiveCert(data as typeof liveCert); })
+          .catch(() => {});
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     setScoreHistory(getScoreHistory());
@@ -236,11 +260,29 @@ export default function DashboardPage() {
 
   const overallScore = Math.round(SKILLS.reduce((s, sk) => s + sk.score, 0) / SKILLS.length);
 
+  // Use live data when available
+  const displayName = liveAgentName ?? AGENT.name;
+  const displayOverall = liveCert?.evaluation
+    ? Math.round(liveCert.evaluation.overall_score)
+    : overallScore;
+
   return (
     <>
       <MainNav />
       <main className="min-h-screen px-4 py-10">
         <div className="max-w-4xl mx-auto space-y-6">
+          {/* ── Live agent banner ── */}
+          {liveAgentId ? (
+            <div className="rounded-lg px-4 py-2.5 text-xs flex items-center justify-between" style={{ background: "rgba(196,255,60,0.06)", border: "1px solid rgba(196,255,60,0.15)" }}>
+              <span className="text-[var(--accent)]">✅ Showing live data for <strong>{displayName}</strong> (assessed agent)</span>
+              <button onClick={() => { localStorage.removeItem("dojo_agent_id"); localStorage.removeItem("dojo_agent_name"); setLiveAgentId(null); setLiveCert(null); }} className="text-[10px] text-[var(--muted)] hover:text-white">reset</button>
+            </div>
+          ) : (
+            <div className="rounded-lg px-4 py-2.5 text-xs flex items-center justify-between" style={{ background: "rgba(255,255,255,0.02)", border: "1px dashed var(--card-border)" }}>
+              <span className="text-[var(--muted)]">Showing demo data — <Link href="/onboard" className="text-[var(--accent)] hover:underline">assess your agent</Link> to see real scores</span>
+            </div>
+          )}
+
           {/* ── Agent header ── */}
           <div
             className="rounded-xl p-6 flex items-center gap-6"
@@ -251,7 +293,7 @@ export default function DashboardPage() {
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-2">
-                <h1 className="text-xl font-bold">{AGENT.name}</h1>
+                <h1 className="text-xl font-bold">{displayName}</h1>
                 <span
                   className="text-[9px] px-2 py-0.5 rounded-full font-bold uppercase"
                   style={{ color: certMeta.color, border: `1px solid ${certMeta.color}`, background: `${certMeta.color}10` }}
@@ -263,7 +305,7 @@ export default function DashboardPage() {
               <p className="text-[10px] text-[var(--accent)] font-mono mt-0.5">{AGENT.ens}</p>
             </div>
             <div className="flex gap-4">
-              <ScoreRing score={overallScore} size={80} label="Skills" />
+              <ScoreRing score={displayOverall} size={80} label="Skills" />
               <ScoreRing score={AGENT.handle === "clawdez" ? 81 : 50} size={80} label="Trust" />
             </div>
           </div>

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import Link from "next/link";
 import MainNav from "@/components/MainNav";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -86,11 +87,47 @@ const DOMAINS: Domain[] = [
 
 // ─── Domain Select ────────────────────────────────────────────────────────────
 
+// ─── Sensei API type ──────────────────────────────────────────────────────────
+
+interface SenseiRecord {
+  senseiId: string;
+  agentId: string;
+  specialty: string;
+  pricePerSession: number;
+  skills: string[];
+  trainingCount: number;
+  successRate: number;
+  reviewCount: number;
+  averageRating: number | null;
+  maiatScore: number;
+  belt: string;
+  createdAt: string;
+}
+
 function DomainSelect({
   onSelect,
 }: {
   onSelect: (domain: Domain) => void;
 }) {
+  const [senseis, setSenseis] = useState<SenseiRecord[]>([]);
+  const [senseiLoading, setSenseiLoading] = useState(true);
+
+  const fetchSenseis = useCallback(async () => {
+    try {
+      const res = await fetch("/api/v1/senseis");
+      if (res.ok) {
+        const data = await res.json() as { senseis: SenseiRecord[] };
+        setSenseis(data.senseis ?? []);
+      }
+    } catch {
+      // non-critical
+    } finally {
+      setSenseiLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchSenseis(); }, [fetchSenseis]);
+
   return (
     <div className="min-h-screen flex flex-col">
       <MainNav />
@@ -103,6 +140,58 @@ function DomainSelect({
             and testing your implementation in real-time.
           </p>
         </div>
+
+        {/* ── Live Senseis from API ── */}
+        {!senseiLoading && senseis.length > 0 && (
+          <div className="mb-6">
+            <p className="text-[10px] font-mono text-[var(--accent)] uppercase tracking-wider mb-3">
+              ✅ {senseis.length} Registered Sensei{senseis.length !== 1 ? "s" : ""} Available
+            </p>
+            <div className="space-y-2">
+              {senseis.map((s) => (
+                <div
+                  key={s.senseiId}
+                  className="p-4 rounded-lg border"
+                  style={{ borderColor: "rgba(196,255,60,0.15)", backgroundColor: "rgba(196,255,60,0.03)" }}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-lg bg-[rgba(196,255,60,0.1)] border border-[rgba(196,255,60,0.2)] flex items-center justify-center text-sm">🥋</div>
+                      <div>
+                        <p className="text-xs font-bold">{s.agentId}</p>
+                        <p className="text-[10px] text-[var(--muted)]">{s.specialty} · {s.belt} Belt · Maiat {s.maiatScore}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs font-bold text-[var(--accent)]">${s.pricePerSession.toFixed(2)} USDC</p>
+                      <p className="text-[9px] text-[var(--muted)]">{s.trainingCount} sessions</p>
+                    </div>
+                  </div>
+                  {s.skills.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {s.skills.slice(0, 5).map((sk) => (
+                        <span key={sk} className="text-[9px] px-1.5 py-0.5 rounded font-mono" style={{ background: "rgba(68,136,255,0.1)", color: "#4488ff" }}>{sk}</span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {!senseiLoading && senseis.length === 0 && (
+          <div className="mb-6 p-5 rounded-xl text-center" style={{ background: "var(--card)", border: "1px dashed var(--card-border)" }}>
+            <p className="text-sm text-[var(--muted)] mb-2">No registered senseis yet — be the first!</p>
+            <Link href="/onboard" className="text-xs text-[var(--accent)] hover:underline">
+              Get assessed → qualify as a sensei →
+            </Link>
+          </div>
+        )}
+
+        <p className="text-[10px] font-mono text-[var(--muted)] uppercase tracking-wider mb-3">
+          All Training Domains
+        </p>
 
         <div className="space-y-3 mb-8">
           {DOMAINS.map((domain) => (
