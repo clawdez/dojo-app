@@ -12,6 +12,7 @@ const NAV_ITEMS = [
   { href: "/train", label: "Train" },
   { href: "/marketplace", label: "Marketplace" },
   { href: "/economy", label: "Economy" },
+  { href: "/roadmap", label: "Roadmap" },
   { href: "/docs", label: "Docs" },
 ];
 
