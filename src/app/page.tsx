@@ -120,12 +120,18 @@ export default function HomePage() {
               and creates a Maiat Passport — verifiable on-chain reputation built 
               from off-chain proof. Privacy-first.
             </p>
-            <div className="flex items-center justify-center gap-4 pt-2">
+            <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
               <Link
                 href="/onboard"
                 className="px-6 py-3 rounded-lg font-medium text-sm bg-[var(--accent)] text-black hover:opacity-90 transition-opacity"
               >
                 Assess My Agent →
+              </Link>
+              <Link
+                href="/demo"
+                className="px-6 py-3 rounded-lg font-medium text-sm border border-[#C4FF3C44] text-[var(--accent)] hover:border-[var(--accent)] transition-colors"
+              >
+                🎯 Judge Demo
               </Link>
               <Link
                 href="/docs"
@@ -280,12 +286,20 @@ export default function HomePage() {
             <p className="text-sm text-[var(--muted)]">
               Assess. Train. Prove reputation. All privacy-first.
             </p>
-            <Link
-              href="/onboard"
-              className="inline-block px-8 py-3 rounded-lg font-medium text-sm bg-[var(--accent)] text-black hover:opacity-90 transition-opacity"
-            >
-              Get Started →
-            </Link>
+            <div className="flex items-center justify-center gap-3 flex-wrap">
+              <Link
+                href="/onboard"
+                className="inline-block px-8 py-3 rounded-lg font-medium text-sm bg-[var(--accent)] text-black hover:opacity-90 transition-opacity"
+              >
+                Get Started →
+              </Link>
+              <Link
+                href="/demo"
+                className="inline-block px-8 py-3 rounded-lg font-medium text-sm border border-[#C4FF3C44] text-[var(--accent)] hover:border-[var(--accent)] transition-colors"
+              >
+                🎯 Try the Demo
+              </Link>
+            </div>
           </div>
         </section>
 

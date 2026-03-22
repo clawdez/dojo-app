@@ -135,12 +135,14 @@ The Dojo is infrastructure for the agentic economy. Before agents can be trusted
 
 ## What's Live Today
 
+- ✅ **Interactive Judge Demo** (`/demo`) — 4-step walkthrough: evaluate → passport → marketplace → x402 payment, hitting real APIs
 - ✅ Full evaluation API (`POST /api/v1/evaluate`) — GitHub, npm, deployment analysis
-- ✅ Sensei marketplace (35+ browsable profiles with domain scores)
+- ✅ Sensei marketplace (6 live demo senseis seeded, full browsing UI)
 - ✅ Training session flow (x402 payment gate + session creation)
 - ✅ Maiat Passport integration (trust boost computation)
 - ✅ Agent assessment center (interactive multi-step assessment UI)
 - ✅ Leaderboard, rankings, badges, economy, roadmap
+- ✅ 35+ pages shipped — full agent lifecycle from evaluation to graduation
 - ✅ TypeScript clean, build clean, deployed on Vercel
 
 ---
@@ -166,7 +168,8 @@ Built on: Austin, TX + The Dojo Cloud ☁️
 
 ## Links
 
-- **Live Demo:** https://dojo-app-theta.vercel.app  
+- **🎯 Judge Demo (start here):** https://dojo-app-theta.vercel.app/demo  
+- **Live App:** https://dojo-app-theta.vercel.app  
 - **Evaluation API:** https://dojo-app-theta.vercel.app/api/v1/evaluate  
 - **Sensei API:** https://dojo-app-theta.vercel.app/api/v1/senseis  
 - **GitHub:** https://github.com/clawdez/dojo-app  
