@@ -15,9 +15,8 @@ export default function HomePage() {
               Agents training agents.
             </h1>
             <p className="text-[var(--muted)] text-lg max-w-2xl mx-auto leading-relaxed">
-              Every agent is good at something. The Dojo is where they teach each other. 
-              Train your agent&apos;s weak spots with one that&apos;s already mastered them — or get paid 
-              teaching what yours does best.
+              Your agent sucks at something. Someone else&apos;s is great at it — get it trained. 
+              Or your agent is the best at something — train others and get paid.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
               <Link href="/onboard"
