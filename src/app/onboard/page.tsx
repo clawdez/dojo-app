@@ -47,8 +47,9 @@ interface PortfolioResult {
 interface CapabilityEntry {
   name: string;
   emoji: string;
-  depth: "deep" | "strong" | "moderate" | "basic" | "none";
+  stars: number; // earned from verified work, no cap
   evidence: string; // what proves this
+  trainSuggestion: string; // what to learn next
   color: string;
 }
 
@@ -86,90 +87,125 @@ function inferCapabilities(data: {
   const desc = data.description.toLowerCase();
   const langs = data.languages.map(l => l.toLowerCase());
 
+  // Star calculation: each piece of verified evidence earns stars
+  // Stars have NO CAP — more work = more stars
+
   // ── Smart Contract / Blockchain ──
   if (data.solidityRepos > 0 || desc.includes("solidity") || desc.includes("smart contract") || desc.includes("anchor")) {
-    const depth = data.solidityRepos >= 5 ? "deep" : data.solidityRepos >= 2 ? "strong" : "moderate";
-    caps.push({ name: "Smart Contracts", emoji: "⛓️", depth, evidence: `${data.solidityRepos} Solidity repos`, color: "#ff8844" });
-    if (depth === "deep" || depth === "strong") teachable.push("Smart contract development & auditing");
+    let stars = 1; // base for having it
+    stars += Math.min(data.solidityRepos, 10); // 1 star per Solidity repo, up to 10
+    if (desc.includes("audit")) stars += 2;
+    if (desc.includes("defi") || desc.includes("protocol")) stars += 1;
+    if (data.commitActivity === "high") stars += 1;
+    caps.push({ name: "Smart Contracts", emoji: "⛓️", stars, evidence: data.solidityRepos > 0 ? `${data.solidityRepos} Solidity repos` : "described in profile", trainSuggestion: "Formal verification & advanced DeFi patterns", color: "#ff8844" });
+    if (stars >= 5) teachable.push("Smart contract development & auditing");
   }
 
   // ── Backend / Systems ──
   const backendLangs = langs.filter(l => ["go", "rust", "python", "java", "kotlin", "c#", "c++"].includes(l));
   if (backendLangs.length > 0 || desc.includes("backend") || desc.includes("api") || desc.includes("server")) {
-    const depth = backendLangs.length >= 3 ? "deep" : backendLangs.length >= 1 ? "strong" : "moderate";
-    caps.push({ name: "Backend & Systems", emoji: "⚙️", depth, evidence: backendLangs.length > 0 ? `${backendLangs.join(", ")}` : "described in profile", color: "#aa44ff" });
-    if (depth === "deep" || depth === "strong") teachable.push("Backend architecture & API design");
+    let stars = 1;
+    stars += backendLangs.length * 2; // 2 stars per backend language
+    if (desc.includes("api")) stars += 1;
+    if (desc.includes("infrastructure") || desc.includes("distributed")) stars += 2;
+    if (data.repos >= 20) stars += 1;
+    caps.push({ name: "Backend & Systems", emoji: "⚙️", stars, evidence: backendLangs.length > 0 ? backendLangs.join(", ") : "described in profile", trainSuggestion: "Distributed systems & scalability patterns", color: "#aa44ff" });
+    if (stars >= 5) teachable.push("Backend architecture & API design");
   }
 
   // ── Frontend / UI ──
   const frontendLangs = langs.filter(l => ["typescript", "javascript", "svelte", "vue", "css", "html"].includes(l));
   if (frontendLangs.length > 0 || desc.includes("frontend") || desc.includes("react") || desc.includes("next.js") || desc.includes("ui")) {
-    const depth = frontendLangs.length >= 3 ? "deep" : frontendLangs.length >= 1 ? "strong" : "moderate";
-    caps.push({ name: "Frontend & UI", emoji: "🎨", depth, evidence: frontendLangs.length > 0 ? `${frontendLangs.join(", ")}` : "described in profile", color: "#4488ff" });
-    if (depth === "deep" || depth === "strong") teachable.push("Frontend development & component architecture");
+    let stars = 1;
+    stars += Math.min(frontendLangs.length, 4) * 2;
+    if (desc.includes("react") || desc.includes("next.js")) stars += 1;
+    if (desc.includes("design") || desc.includes("ui/ux")) stars += 1;
+    if (data.liveDeployments > 0) stars += 1;
+    caps.push({ name: "Frontend & UI", emoji: "🎨", stars, evidence: frontendLangs.length > 0 ? frontendLangs.join(", ") : "described in profile", trainSuggestion: "Design systems & advanced component patterns", color: "#4488ff" });
+    if (stars >= 5) teachable.push("Frontend development & component architecture");
   }
 
   // ── DevOps / Deployment ──
   if (data.liveDeployments > 0 || desc.includes("devops") || desc.includes("deploy") || desc.includes("docker") || desc.includes("kubernetes") || desc.includes("ci/cd")) {
-    const depth = data.liveDeployments >= 5 ? "deep" : data.liveDeployments >= 2 ? "strong" : data.liveDeployments >= 1 ? "moderate" : "basic";
-    caps.push({ name: "DevOps & Deployment", emoji: "🚀", depth, evidence: data.liveDeployments > 0 ? `${data.liveDeployments} live deployments` : "described in profile", color: "#44ffff" });
-    if (depth === "deep" || depth === "strong") teachable.push("Deployment pipelines & infrastructure");
+    let stars = 1;
+    stars += Math.min(data.liveDeployments, 8); // 1 star per live deployment
+    if (desc.includes("docker") || desc.includes("kubernetes")) stars += 2;
+    if (desc.includes("ci/cd") || desc.includes("pipeline")) stars += 1;
+    caps.push({ name: "DevOps & Deployment", emoji: "🚀", stars, evidence: data.liveDeployments > 0 ? `${data.liveDeployments} live deployments verified` : "described in profile", trainSuggestion: "Container orchestration & zero-downtime deployments", color: "#44ffff" });
+    if (stars >= 5) teachable.push("Deployment pipelines & infrastructure");
   }
 
   // ── Open Source / Community ──
-  if (data.npmPackages > 0 || data.totalStars >= 100 || data.totalForks >= 50) {
-    const depth = data.totalStars >= 1000 ? "deep" : data.totalStars >= 100 ? "strong" : "moderate";
-    caps.push({ name: "Open Source", emoji: "🌐", depth, evidence: `${data.totalStars.toLocaleString()} stars, ${data.npmPackages} packages`, color: "#C4FF3C" });
-    if (depth === "deep" || depth === "strong") teachable.push("Open source project management");
+  if (data.npmPackages > 0 || data.totalStars >= 50 || data.totalForks >= 20) {
+    let stars = 1;
+    stars += Math.min(data.npmPackages * 2, 6);
+    if (data.totalStars >= 10000) stars += 4;
+    else if (data.totalStars >= 1000) stars += 3;
+    else if (data.totalStars >= 100) stars += 2;
+    else if (data.totalStars >= 10) stars += 1;
+    if (data.totalForks >= 100) stars += 2;
+    else if (data.totalForks >= 20) stars += 1;
+    caps.push({ name: "Open Source", emoji: "🌐", stars, evidence: `${data.totalStars.toLocaleString()} stars · ${data.npmPackages} packages`, trainSuggestion: "Community building & maintainer workflows", color: "#C4FF3C" });
+    if (stars >= 5) teachable.push("Open source project management");
   }
 
   // ── Research & Analysis ──
   if (desc.includes("research") || desc.includes("analysis") || desc.includes("rag") || desc.includes("data")) {
-    const depth = desc.includes("deep") || desc.includes("expert") ? "strong" : "moderate";
-    caps.push({ name: "Research & Analysis", emoji: "🔍", depth, evidence: "described in profile", color: "#ffcc00" });
-    if (depth === "strong") teachable.push("Research methodology & data analysis");
+    let stars = 2;
+    if (desc.includes("deep") || desc.includes("expert")) stars += 2;
+    if (desc.includes("rag") || desc.includes("retrieval")) stars += 1;
+    if (desc.includes("competitive") || desc.includes("market")) stars += 1;
+    caps.push({ name: "Research & Analysis", emoji: "🔍", stars, evidence: "described in profile", trainSuggestion: "Advanced RAG pipelines & knowledge synthesis", color: "#ffcc00" });
+    if (stars >= 5) teachable.push("Research methodology & data analysis");
   }
 
   // ── Agent Orchestration ──
   if (desc.includes("orchestrat") || desc.includes("subagent") || desc.includes("multi-agent") || desc.includes("swarm") || desc.includes("workflow")) {
-    const depth = desc.includes("orchestrat") && desc.includes("agent") ? "strong" : "moderate";
-    caps.push({ name: "Agent Orchestration", emoji: "🤖", depth, evidence: "described in profile", color: "#ff44ff" });
-    if (depth === "strong") teachable.push("Multi-agent orchestration & workflow design");
+    let stars = 2;
+    if (desc.includes("orchestrat") && desc.includes("agent")) stars += 2;
+    if (desc.includes("swarm") || desc.includes("multi-agent")) stars += 2;
+    if (desc.includes("automat")) stars += 1;
+    caps.push({ name: "Agent Orchestration", emoji: "🤖", stars, evidence: "described in profile", trainSuggestion: "Swarm coordination & inter-agent protocols", color: "#ff44ff" });
+    if (stars >= 5) teachable.push("Multi-agent orchestration & workflow design");
   }
 
   // ── Security & Safety ──
   if (desc.includes("security") || desc.includes("audit") || desc.includes("safety") || desc.includes("adversarial")) {
-    const depth: CapabilityEntry["depth"] = desc.includes("audit") && (desc.includes("smart contract") || data.solidityRepos > 0) ? "deep" : desc.includes("audit") ? "strong" : "moderate";
-    caps.push({ name: "Security & Auditing", emoji: "🛡️", depth, evidence: data.solidityRepos > 0 ? `${data.solidityRepos} Solidity repos + security focus` : "described in profile", color: "#ff4444" });
-    if (depth === "deep" || depth === "strong") teachable.push("Smart contract auditing & security testing");
+    let stars = 2;
+    if (desc.includes("audit")) stars += 3;
+    if (data.solidityRepos > 0) stars += 2;
+    if (desc.includes("adversarial") || desc.includes("vulnerability")) stars += 1;
+    if (desc.includes("trust")) stars += 1;
+    caps.push({ name: "Security & Auditing", emoji: "🛡️", stars, evidence: data.solidityRepos > 0 ? `${data.solidityRepos} Solidity repos + security focus` : "described in profile", trainSuggestion: "Formal verification & cross-chain exploit patterns", color: "#ff4444" });
+    if (stars >= 5) teachable.push("Smart contract auditing & security testing");
   }
 
   // ── Content & Marketing ──
   if (desc.includes("content") || desc.includes("marketing") || desc.includes("writing") || desc.includes("copy") || desc.includes("social")) {
-    const depth = desc.includes("marketing") && desc.includes("automat") ? "strong" : "moderate";
-    caps.push({ name: "Content & Marketing", emoji: "✍️", depth, evidence: "described in profile", color: "#ff88cc" });
-    if (depth === "strong") teachable.push("Automated content marketing");
+    let stars = 2;
+    if (desc.includes("automat")) stars += 2;
+    if (desc.includes("social media") || desc.includes("tiktok") || desc.includes("twitter")) stars += 1;
+    if (desc.includes("seo") || desc.includes("growth")) stars += 1;
+    caps.push({ name: "Content & Marketing", emoji: "✍️", stars, evidence: "described in profile", trainSuggestion: "Growth loops & automated content pipelines", color: "#ff88cc" });
+    if (stars >= 5) teachable.push("Automated content marketing");
   }
 
-  // If no capabilities inferred, add a basic one
+  // If no capabilities inferred
   if (caps.length === 0) {
-    caps.push({ name: "General Purpose", emoji: "🔵", depth: "basic", evidence: "limited verifiable history", color: "#888" });
+    caps.push({ name: "Getting Started", emoji: "🌱", stars: 1, evidence: "connect more platforms to earn stars", trainSuggestion: "Build your first verified project", color: "#888" });
   }
 
-  // Sort by depth strength
-  const depthOrder = { deep: 0, strong: 1, moderate: 2, basic: 3, none: 4 };
-  caps.sort((a, b) => depthOrder[a.depth] - depthOrder[b.depth]);
+  // Sort by stars (most first)
+  caps.sort((a, b) => b.stars - a.stars);
 
   return { capabilities: caps, teachableSkills: teachable };
 }
 
-const DEPTH_BAR: Record<string, { width: string; label: string; growth: string }> = {
-  deep: { width: "85%", label: "Deep", growth: "Push into frontier-level mastery" },
-  strong: { width: "65%", label: "Strong", growth: "Deepen with more complex challenges" },
-  moderate: { width: "45%", label: "Moderate", growth: "Build more verified work in this area" },
-  basic: { width: "25%", label: "Basic", growth: "Significant room to grow" },
-  none: { width: "8%", label: "Not detected", growth: "Start building experience here" },
-};
+// Stars are earned from verified work — no cap, always room to earn more
+function renderStars(count: number): string {
+  return "★".repeat(count) + (count < 10 ? "☆".repeat(Math.min(3, 10 - count)) : "");
+}
+
 
 // ─── Main Component ──────────────────────────────────────────────────────────
 
@@ -308,15 +344,12 @@ export default function OnboardPage() {
           agentId: portfolio.agentId,
           evaluationData: {
             agentName: portfolio.agentName,
-            overallScore: Math.round(portfolio.capabilities.reduce((sum, c) => {
-              const w = { deep: 95, strong: 75, moderate: 50, basic: 25, none: 5 };
-              return sum + (w[c.depth] ?? 0);
-            }, 0) / portfolio.capabilities.length),
+            overallScore: Math.round(portfolio.capabilities.reduce((sum, c) => sum + Math.min(c.stars * 10, 100), 0) / portfolio.capabilities.length),
             safetyScore: 50,
             domains: portfolio.capabilities.map(c => ({
               domain: c.name,
-              score: { deep: 95, strong: 75, moderate: 50, basic: 25, none: 5 }[c.depth] ?? 0,
-              verdict: c.depth,
+              score: Math.min(c.stars * 10, 100),
+              verdict: c.stars >= 8 ? "deep" : c.stars >= 5 ? "strong" : c.stars >= 3 ? "moderate" : "basic",
             })),
           },
         }),
@@ -570,25 +603,24 @@ export default function OnboardPage() {
 
               {/* Capability Map */}
               <div className="rounded-xl p-6 space-y-4" style={{ background: "var(--card)", border: "1px solid var(--card-border)" }}>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--muted)]">Capability Map</h3>
-                <p className="text-[10px] text-[var(--muted)]">Inferred from verified work history — not self-reported</p>
-                <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--muted)]">Capabilities</h3>
+                  <p className="text-[10px] text-[var(--muted)]">★ = verified work evidence</p>
+                </div>
+                <div className="space-y-1">
                   {portfolio.capabilities.map((cap) => (
-                    <div key={cap.name} className="space-y-1.5">
-                      <div className="flex items-center justify-between">
+                    <div key={cap.name} className="rounded-lg px-4 py-3 hover:bg-white/[0.02] transition-colors" style={{ borderBottom: "1px solid rgba(255,255,255,0.03)" }}>
+                      <div className="flex items-center justify-between mb-1">
                         <div className="flex items-center gap-2">
-                          <span>{cap.emoji}</span>
-                          <span className="text-xs font-medium">{cap.name}</span>
+                          <span className="text-base">{cap.emoji}</span>
+                          <span className="text-sm font-medium">{cap.name}</span>
                         </div>
-                        <span className="text-[10px] font-mono" style={{ color: cap.color }}>{DEPTH_BAR[cap.depth].label}</span>
+                        <span className="text-sm tracking-wider" style={{ color: cap.color }}>{renderStars(cap.stars)}</span>
                       </div>
-                      <div className="h-2 rounded-full bg-[rgba(255,255,255,0.04)] overflow-hidden">
-                        <div className="h-full rounded-full transition-all duration-700" style={{ width: DEPTH_BAR[cap.depth].width, background: cap.color }} />
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <p className="text-[10px] text-[var(--muted)] italic">Evidence: {cap.evidence}</p>
-                        <p className="text-[10px] text-[var(--accent)]/60">↑ {DEPTH_BAR[cap.depth].growth}</p>
-                      </div>
+                      <p className="text-[11px] text-[var(--muted)] ml-7">{cap.evidence}</p>
+                      <Link href="/train" className="text-[11px] ml-7 mt-1 inline-block hover:underline" style={{ color: cap.color }}>
+                        → Train: {cap.trainSuggestion}
+                      </Link>
                     </div>
                   ))}
                 </div>
@@ -682,7 +714,7 @@ export default function OnboardPage() {
                     {portfolio.capabilities.slice(0, 4).map((cap) => (
                       <div key={cap.name} className="flex items-center justify-between text-xs">
                         <span>{cap.emoji} {cap.name}</span>
-                        <span className="font-mono text-[10px]" style={{ color: cap.color }}>{cap.depth}</span>
+                        <span className="text-[10px]" style={{ color: cap.color }}>{renderStars(cap.stars)}</span>
                       </div>
                     ))}
                   </div>
