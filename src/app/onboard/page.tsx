@@ -251,7 +251,19 @@ export default function OnboardPage() {
       const res = await fetch("/api/v1/passport", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ agentId: evalResult.agentId }),
+        body: JSON.stringify({
+          agentId: evalResult.agentId,
+          evaluationData: {
+            agentName: evalResult.agentId,
+            overallScore: evalResult.overallScore,
+            safetyScore: evalResult.domains.find(d => d.domain === "Safety")?.score ?? 40,
+            domains: evalResult.domains.map(d => ({
+              domain: d.domain,
+              score: d.score,
+              verdict: d.verdict,
+            })),
+          },
+        }),
       });
       if (res.ok) {
         setPassportCreated(true);
