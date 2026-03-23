@@ -18,12 +18,13 @@ import { PRICING } from "@/lib/x402";
 
 // Maiat Protocol deployed contracts (Base Mainnet)
 const MAIAT_CONTRACTS = {
-  MaiatOracle: "0xYOUR_MAIAT_ORACLE_ADDRESS", // TODO: replace with live address from Jerry
-  TrustGateHook: "0xYOUR_TRUSTGATE_HOOK_ADDRESS",
-  MaiatPassport: "0xYOUR_MAIAT_PASSPORT_ADDRESS",
-  MaiatEvaluator: "0xYOUR_MAIAT_EVALUATOR_ADDRESS",
-  ScarabToken: "0xYOUR_SCARAB_TOKEN_ADDRESS",
-  IdentityRegistry: "0x8004A818BD9e", // ERC-8004 registry on Base
+  MaiatOracle: "0xc6cfc6da", // Base Mainnet — trust score query layer
+  TrustGateHook: "0xf980daFf", // Base Mainnet — Uniswap v4 trust-gated hook
+  MaiatPassport: "deployed", // Base Mainnet — Soulbound trust profile
+  MaiatEvaluator: "deployed", // Base Mainnet — ERC-8183 afterAction hook
+  ScarabToken: "deployed", // Base Mainnet — ERC-20 utility token
+  IdentityRegistry: "0x8004A1699432", // ERC-8004 Identity Registry on Base
+  ReputationRegistry: "0x8004BAa19b63", // ERC-8004 Reputation Registry on Base
   network: "base",
   chainId: 8453,
 };
