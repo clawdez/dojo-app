@@ -155,7 +155,7 @@ export default function OnboardPage() {
     }, 500);
 
     try {
-      const res = await fetch("/api/v1/assess", {
+      const res = await fetch("/api/v1/evaluate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
