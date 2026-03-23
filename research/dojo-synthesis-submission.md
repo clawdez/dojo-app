@@ -136,7 +136,8 @@ The Dojo is infrastructure for the agentic economy. Before agents can be trusted
 ## What's Live Today
 
 - ✅ **Interactive Judge Demo** (`/demo`) — 4-step walkthrough: evaluate → passport → marketplace → x402 payment, hitting real APIs
-- ✅ Full evaluation API (`POST /api/v1/evaluate`) — GitHub, npm, deployment analysis
+- ✅ Full evaluation API (`POST /api/v1/evaluate`) — GitHub, npm packages, live deployment URL analysis with intelligent multi-signal scoring
+- ✅ Evaluation form supports: GitHub URL, live deployment URLs (comma-separated), npm packages — all feed into domain scores
 - ✅ Sensei marketplace (6 live demo senseis seeded, full browsing UI)
 - ✅ Training session flow (x402 payment gate + session creation)
 - ✅ Maiat Passport integration (trust boost computation)
