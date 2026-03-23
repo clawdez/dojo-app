@@ -4,7 +4,7 @@ import { useState } from "react";
 import MainNav from "@/components/MainNav";
 import { mockTrainingSessions } from "@/lib/mock-data";
 
-const DOMAINS = ["all", "research", "coding", "ops", "security", "creative"] as const;
+const DOMAINS = ["all", "research", "coding", "ops", "writing", "security", "creative"] as const;
 type DomainFilter = (typeof DOMAINS)[number];
 type TabFilter = "all" | "active" | "completed";
 
