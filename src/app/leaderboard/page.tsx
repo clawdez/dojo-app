@@ -272,13 +272,13 @@ function CombinedRow({ agent, rank }: { agent: ReturnType<typeof buildCombinedEn
     <article className="grid grid-cols-[2rem_1fr_5rem_5rem_5rem_4rem] gap-3 items-center px-4 py-3 border border-[var(--card-border)] bg-[var(--card)] hover:border-[var(--accent)] transition-colors">
       <span className="text-sm font-mono text-[var(--muted)]">#{rank}</span>
 
-      <div className="flex items-center gap-2 min-w-0">
+      <Link href={`/profile/${agent.id}`} className="flex items-center gap-2 min-w-0 hover:opacity-80 transition-opacity">
         <span className="text-base">{agent.avatar}</span>
         <div className="min-w-0">
-          <span className="text-sm block truncate">{agent.name}</span>
+          <span className="text-sm block truncate hover:text-[var(--accent)] transition-colors">{agent.name}</span>
           <p className="text-[10px] font-mono text-[var(--muted)] truncate">{agent.model}</p>
         </div>
-      </div>
+      </Link>
 
       {/* Maiat base */}
       <div className="text-right">
@@ -318,13 +318,13 @@ function DojoRow({ agent, rank }: { agent: ReturnType<typeof buildCombinedEntry>
     <article className="grid grid-cols-[2rem_1fr_4rem_4rem_4rem_6rem] gap-3 items-center px-4 py-3 border border-[var(--card-border)] bg-[var(--card)] hover:border-[var(--accent)] transition-colors">
       <span className="text-sm font-mono text-[var(--muted)]">#{rank}</span>
 
-      <div className="flex items-center gap-2 min-w-0">
+      <Link href={`/profile/${agent.id}`} className="flex items-center gap-2 min-w-0 hover:opacity-80 transition-opacity">
         <span className="text-base">{agent.avatar}</span>
         <div className="min-w-0">
-          <span className="text-sm block truncate">{agent.name}</span>
+          <span className="text-sm block truncate hover:text-[var(--accent)] transition-colors">{agent.name}</span>
           <p className="text-[10px] font-mono text-[var(--muted)] truncate">{agent.model}</p>
         </div>
-      </div>
+      </Link>
 
       <div className="text-right">
         <span className="text-sm font-mono text-[var(--accent)]" style={{ color: scoreColor(agent.dojoScore) }}>
@@ -354,13 +354,13 @@ function MaiatRow({ agent, rank }: { agent: ReturnType<typeof buildCombinedEntry
     <article className="grid grid-cols-[2rem_1fr_5rem_5rem_5rem] gap-3 items-center px-4 py-3 border border-[var(--card-border)] bg-[var(--card)] hover:border-[var(--accent)] transition-colors">
       <span className="text-sm font-mono text-[var(--muted)]">#{rank}</span>
 
-      <div className="flex items-center gap-2 min-w-0">
+      <Link href={`/profile/${agent.id}`} className="flex items-center gap-2 min-w-0 hover:opacity-80 transition-opacity">
         <span className="text-base">{agent.avatar}</span>
         <div className="min-w-0">
-          <span className="text-sm block truncate">{agent.name}</span>
+          <span className="text-sm block truncate hover:text-[var(--accent)] transition-colors">{agent.name}</span>
           <p className="text-[10px] font-mono text-[var(--muted)] truncate">{agent.model}</p>
         </div>
-      </div>
+      </Link>
 
       <div className="text-right">
         <span className="text-sm font-mono">{agent.maiatBase}</span>

@@ -91,7 +91,7 @@ function CopyButton({ text }: { text: string }) {
 
 export default function AgentPassportPage() {
   const params = useParams();
-  const agentId = params.agentId as string;
+  const agentId = params.id as string;
 
   const agent = useMemo(
     () => mockMarketplaceAgents.find((a) => a.id === agentId),
