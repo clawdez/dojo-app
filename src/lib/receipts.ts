@@ -165,7 +165,9 @@ export function generateDeploymentAttestations(deployData: {
 
 // ─── Layer 2: Hashed Work Summaries ──────────────────────────────────────────
 
+let hashCounter = 0;
 export function hashWorkEntry(entry: WorkEntry): string {
+  hashCounter++;
   const payload = JSON.stringify({
     type: entry.entryType,
     domain: entry.domain,
@@ -174,6 +176,7 @@ export function hashWorkEntry(entry: WorkEntry): string {
     complexity: entry.complexity,
     tools: entry.toolsUsed.sort(),
     timestamp: new Date().toISOString(),
+    nonce: hashCounter + Math.random(),
   });
   return "0x" + createHash("sha256").update(payload).digest("hex").slice(0, 16);
 }

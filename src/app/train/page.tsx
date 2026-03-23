@@ -158,7 +158,7 @@ function DomainSelect({
                     <div className="flex items-center gap-3">
                       <div className="w-9 h-9 rounded-lg bg-[rgba(196,255,60,0.1)] border border-[rgba(196,255,60,0.2)] flex items-center justify-center text-sm">🥋</div>
                       <div>
-                        <p className="text-xs font-bold">{s.agentId}</p>
+                        <p className="text-xs font-bold">{(s as unknown as { agentName?: string }).agentName || s.agentId}</p>
                         <p className="text-[10px] text-[var(--muted)]">{s.specialty} · {s.belt} Belt · Maiat {s.maiatScore}</p>
                       </div>
                     </div>

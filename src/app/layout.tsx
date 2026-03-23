@@ -41,7 +41,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" style={{ colorScheme: "dark", backgroundColor: "#0a0a0f" }}>
       <head>
         <link
           href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap"
@@ -52,7 +52,7 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="antialiased">
+      <body className="antialiased" style={{ backgroundColor: "#0a0a0f", color: "#e5e5e5" }}>
         {children}
       </body>
     </html>
