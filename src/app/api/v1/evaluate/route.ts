@@ -13,6 +13,15 @@ import {
 } from "@/lib/evaluation-engine";
 import { evaluationStore as sharedEvalStore } from "@/lib/stores";
 import { saveAgent, saveCapabilities, type AgentRecord, type CapabilityRecord } from "@/lib/supabase";
+import {
+  generateGitHubAttestations,
+  generateNpmAttestations,
+  generateDeploymentAttestations,
+  generateWorkEntries,
+  inferFromPattern,
+  saveAttestations,
+  saveWorkEntries,
+} from "@/lib/receipts";
 
 // ─── In-memory store ──────────────────────────────────────────────────────────
 // Shared with the GET [agentId] route via module-level singleton.
@@ -210,6 +219,33 @@ export async function POST(req: NextRequest) {
     }
 
     if (caps.length > 0) await saveCapabilities(caps);
+
+    // ── Layer 1: Platform Attestations ──
+    const attestations = [
+      ...(github ? generateGitHubAttestations(github) : []),
+      ...(npm ? generateNpmAttestations(npm) : []),
+      ...(deployments ? generateDeploymentAttestations(deployments) : []),
+    ];
+    if (attestations.length > 0) await saveAttestations(agentId, attestations);
+
+    // ── Layer 2: Hashed Work Entries ──
+    const workEntries = generateWorkEntries(description, github, deployments, npm);
+    if (workEntries.length > 0) await saveWorkEntries(agentId, workEntries);
+
+    // ── Layer 3: Capability Inference (already done via caps above, but also store pattern data) ──
+    const inferences = inferFromPattern(attestations, workEntries);
+    // Update capabilities with pattern-based stars if higher
+    const patternCaps: CapabilityRecord[] = inferences.map(inf => ({
+      agent_id: agentId,
+      name: inf.capability,
+      emoji: "📊",
+      stars: inf.stars,
+      evidence: inf.evidence,
+      train_suggestion: inf.growth,
+      color: "#C4FF3C",
+    }));
+    if (patternCaps.length > 0) await saveCapabilities(patternCaps);
+
   } catch (dbErr) {
     console.error("Supabase save failed (non-blocking):", dbErr);
   }
