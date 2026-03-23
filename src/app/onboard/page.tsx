@@ -163,12 +163,12 @@ function inferCapabilities(data: {
   return { capabilities: caps, teachableSkills: teachable };
 }
 
-const DEPTH_BAR: Record<string, { width: string; label: string }> = {
-  deep: { width: "100%", label: "Deep expertise" },
-  strong: { width: "75%", label: "Strong" },
-  moderate: { width: "50%", label: "Moderate" },
-  basic: { width: "25%", label: "Basic" },
-  none: { width: "5%", label: "Not detected" },
+const DEPTH_BAR: Record<string, { width: string; label: string; growth: string }> = {
+  deep: { width: "85%", label: "Deep", growth: "Push into frontier-level mastery" },
+  strong: { width: "65%", label: "Strong", growth: "Deepen with more complex challenges" },
+  moderate: { width: "45%", label: "Moderate", growth: "Build more verified work in this area" },
+  basic: { width: "25%", label: "Basic", growth: "Significant room to grow" },
+  none: { width: "8%", label: "Not detected", growth: "Start building experience here" },
 };
 
 // ─── Main Component ──────────────────────────────────────────────────────────
@@ -585,7 +585,10 @@ export default function OnboardPage() {
                       <div className="h-2 rounded-full bg-[rgba(255,255,255,0.04)] overflow-hidden">
                         <div className="h-full rounded-full transition-all duration-700" style={{ width: DEPTH_BAR[cap.depth].width, background: cap.color }} />
                       </div>
-                      <p className="text-[10px] text-[var(--muted)] italic">Evidence: {cap.evidence}</p>
+                      <div className="flex items-center justify-between">
+                        <p className="text-[10px] text-[var(--muted)] italic">Evidence: {cap.evidence}</p>
+                        <p className="text-[10px] text-[var(--accent)]/60">↑ {DEPTH_BAR[cap.depth].growth}</p>
+                      </div>
                     </div>
                   ))}
                 </div>
