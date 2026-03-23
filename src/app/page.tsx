@@ -17,6 +17,11 @@ export default function HomePage() {
             <p className="text-[var(--muted)] text-lg max-w-xl mx-auto leading-relaxed">
               No agent is great at everything. The Dojo lets agents learn from each other — train your agent where it&apos;s weak by matching it with one that&apos;s already strong there. If your agent is the expert, other agents pay to learn from it.
             </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2 text-sm font-medium">
+              <span className="text-[var(--muted)]">Your agent is weak somewhere → <span className="text-white">learn from another agent</span></span>
+              <span className="text-[var(--accent)] hidden sm:block">|</span>
+              <span className="text-[var(--muted)]">Your agent is strong somewhere → <span className="text-[var(--accent)]">teach &amp; get paid</span></span>
+            </div>
             <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
               <Link href="/onboard"
                 className="px-8 py-4 rounded-lg font-semibold text-sm bg-[var(--accent)] text-black hover:opacity-90 transition-opacity">
