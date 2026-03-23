@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { randomUUID } from "crypto";
+import { randomUUID, createHash } from "crypto";
 import {
   EvaluationInput,
   EvaluationReport,
@@ -96,9 +96,14 @@ export async function POST(req: NextRequest) {
   };
 
   // ── Build report ───────────────────────────────────────────────────────────
-  const agentId = randomUUID();
+  // Deterministic ID: same name + github = same agent (allows re-evaluation)
+  const idSeed = `${name.toLowerCase().trim()}::${input.githubUrl ?? "no-github"}`;
+  const agentId = createHash("sha256").update(idSeed).digest("hex").slice(0, 36);
+  // Format as UUID: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+  const agentIdFormatted = `${agentId.slice(0,8)}-${agentId.slice(8,12)}-${agentId.slice(12,16)}-${agentId.slice(16,20)}-${agentId.slice(20,32)}`;
+  const finalAgentId = agentIdFormatted;
   const report: EvaluationReport = {
-    agentId,
+    agentId: finalAgentId,
     input,
     evaluation: {
       overall_score,
@@ -116,15 +121,15 @@ export async function POST(req: NextRequest) {
     evaluated_at: new Date().toISOString(),
   };
 
-  evaluationStore.set(agentId, report);
+  evaluationStore.set(finalAgentId, report);
 
   // Also write to shared store so /api/v1/passport can find this evaluation
   const domainMap: Record<string, string> = {
     code: "Code", research: "Research", creative: "Creative",
     operations: "Ops", safety: "Safety",
   };
-  sharedEvalStore.set(agentId, {
-    agentId,
+  sharedEvalStore.set(finalAgentId, {
+    agentId: finalAgentId,
     agentName: name,
     overallScore: overall_score,
     safetyScore: domains.safety ?? 40,
@@ -140,7 +145,7 @@ export async function POST(req: NextRequest) {
   // ── Save to Supabase (non-blocking — don't fail the request if DB is down) ──
   try {
     const agentRecord: AgentRecord = {
-      agent_id: agentId,
+      agent_id: finalAgentId,
       name,
       description,
       model,
@@ -166,34 +171,34 @@ export async function POST(req: NextRequest) {
       let s = 1 + Math.min(github?.solidity_repos ?? 0, 10);
       if (descLower.includes("audit")) s += 2;
       if (descLower.includes("defi")) s += 1;
-      caps.push({ agent_id: agentId, name: "Smart Contracts", emoji: "⛓️", stars: s, evidence: `${github?.solidity_repos ?? 0} Solidity repos`, train_suggestion: "Formal verification & advanced DeFi patterns", color: "#ff8844" });
+      caps.push({ agent_id: finalAgentId, name: "Smart Contracts", emoji: "⛓️", stars: s, evidence: `${github?.solidity_repos ?? 0} Solidity repos`, train_suggestion: "Formal verification & advanced DeFi patterns", color: "#ff8844" });
     }
     // Backend
     const backLangs = langs.filter((l: string) => ["go","rust","python","java","kotlin"].includes(l));
     if (backLangs.length > 0 || descLower.includes("backend") || descLower.includes("api")) {
       let s = 1 + backLangs.length * 2;
       if (descLower.includes("infrastructure")) s += 2;
-      caps.push({ agent_id: agentId, name: "Backend & Systems", emoji: "⚙️", stars: s, evidence: backLangs.join(", ") || "profile", train_suggestion: "Distributed systems", color: "#aa44ff" });
+      caps.push({ agent_id: finalAgentId, name: "Backend & Systems", emoji: "⚙️", stars: s, evidence: backLangs.join(", ") || "profile", train_suggestion: "Distributed systems", color: "#aa44ff" });
     }
     // Frontend
     const frontLangs = langs.filter((l: string) => ["typescript","javascript","svelte","vue","css","html"].includes(l));
     if (frontLangs.length > 0 || descLower.includes("frontend") || descLower.includes("react")) {
       let s = 1 + Math.min(frontLangs.length, 4) * 2;
       if (descLower.includes("react") || descLower.includes("next.js")) s += 1;
-      caps.push({ agent_id: agentId, name: "Frontend & UI", emoji: "🎨", stars: s, evidence: frontLangs.join(", ") || "profile", train_suggestion: "Design systems", color: "#4488ff" });
+      caps.push({ agent_id: finalAgentId, name: "Frontend & UI", emoji: "🎨", stars: s, evidence: frontLangs.join(", ") || "profile", train_suggestion: "Design systems", color: "#4488ff" });
     }
     // DevOps
     if ((deployments?.live ?? 0) > 0 || descLower.includes("devops") || descLower.includes("deploy")) {
       let s = 1 + Math.min(deployments?.live ?? 0, 8);
       if (descLower.includes("docker") || descLower.includes("kubernetes")) s += 2;
-      caps.push({ agent_id: agentId, name: "DevOps & Deployment", emoji: "🚀", stars: s, evidence: `${deployments?.live ?? 0} deployments`, train_suggestion: "Container orchestration", color: "#44ffff" });
+      caps.push({ agent_id: finalAgentId, name: "DevOps & Deployment", emoji: "🚀", stars: s, evidence: `${deployments?.live ?? 0} deployments`, train_suggestion: "Container orchestration", color: "#44ffff" });
     }
     // Security
     if (descLower.includes("security") || descLower.includes("audit") || descLower.includes("safety")) {
       let s = 2;
       if (descLower.includes("audit")) s += 3;
       if ((github?.solidity_repos ?? 0) > 0) s += 2;
-      caps.push({ agent_id: agentId, name: "Security & Auditing", emoji: "🛡️", stars: s, evidence: "security focus", train_suggestion: "Cross-chain exploit patterns", color: "#ff4444" });
+      caps.push({ agent_id: finalAgentId, name: "Security & Auditing", emoji: "🛡️", stars: s, evidence: "security focus", train_suggestion: "Cross-chain exploit patterns", color: "#ff4444" });
     }
     // Content
     if (descLower.includes("content") || descLower.includes("marketing") || descLower.includes("social")) {
@@ -201,21 +206,21 @@ export async function POST(req: NextRequest) {
       if (descLower.includes("automat")) s += 2;
       if (descLower.includes("tiktok") || descLower.includes("social media")) s += 2;
       if (descLower.includes("viral") || descLower.includes("growth")) s += 1;
-      caps.push({ agent_id: agentId, name: "Content & Marketing", emoji: "✍️", stars: s, evidence: "profile", train_suggestion: "Growth loops", color: "#ff88cc" });
+      caps.push({ agent_id: finalAgentId, name: "Content & Marketing", emoji: "✍️", stars: s, evidence: "profile", train_suggestion: "Growth loops", color: "#ff88cc" });
     }
     // Research
     if (descLower.includes("research") || descLower.includes("analysis") || descLower.includes("data")) {
       let s = 2;
       if (descLower.includes("rag")) s += 2;
       if (descLower.includes("competitive") || descLower.includes("market")) s += 1;
-      caps.push({ agent_id: agentId, name: "Research & Analysis", emoji: "🔍", stars: s, evidence: "profile", train_suggestion: "Advanced RAG pipelines", color: "#ffcc00" });
+      caps.push({ agent_id: finalAgentId, name: "Research & Analysis", emoji: "🔍", stars: s, evidence: "profile", train_suggestion: "Advanced RAG pipelines", color: "#ffcc00" });
     }
     // Orchestration
     if (descLower.includes("orchestrat") || descLower.includes("subagent") || descLower.includes("multi-agent") || descLower.includes("swarm")) {
       let s = 2;
       if (descLower.includes("orchestrat") && descLower.includes("agent")) s += 2;
       if (descLower.includes("swarm")) s += 2;
-      caps.push({ agent_id: agentId, name: "Agent Orchestration", emoji: "🤖", stars: s, evidence: "profile", train_suggestion: "Swarm coordination", color: "#ff44ff" });
+      caps.push({ agent_id: finalAgentId, name: "Agent Orchestration", emoji: "🤖", stars: s, evidence: "profile", train_suggestion: "Swarm coordination", color: "#ff44ff" });
     }
 
     if (caps.length > 0) await saveCapabilities(caps);
@@ -226,17 +231,17 @@ export async function POST(req: NextRequest) {
       ...(npm ? generateNpmAttestations(npm) : []),
       ...(deployments ? generateDeploymentAttestations(deployments) : []),
     ];
-    if (attestations.length > 0) await saveAttestations(agentId, attestations);
+    if (attestations.length > 0) await saveAttestations(finalAgentId, attestations);
 
     // ── Layer 2: Hashed Work Entries ──
     const workEntries = generateWorkEntries(description, github, deployments, npm);
-    if (workEntries.length > 0) await saveWorkEntries(agentId, workEntries);
+    if (workEntries.length > 0) await saveWorkEntries(finalAgentId, workEntries);
 
     // ── Layer 3: Capability Inference (already done via caps above, but also store pattern data) ──
     const inferences = inferFromPattern(attestations, workEntries);
     // Update capabilities with pattern-based stars if higher
     const patternCaps: CapabilityRecord[] = inferences.map(inf => ({
-      agent_id: agentId,
+      agent_id: finalAgentId,
       name: inf.capability,
       emoji: "📊",
       stars: inf.stars,
