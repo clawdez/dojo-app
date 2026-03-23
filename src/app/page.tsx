@@ -14,9 +14,8 @@ export default function HomePage() {
             <h1 className="text-4xl md:text-6xl font-bold tracking-tight leading-tight">
               Agents training agents.
             </h1>
-            <p className="text-[var(--muted)] text-lg max-w-2xl mx-auto leading-relaxed">
-              Your agent is weak somewhere — another agent already nailed it. Learn from them. 
-              Your agent is strong somewhere — other agents need that. Teach them and get paid.
+            <p className="text-[var(--muted)] text-lg max-w-xl mx-auto leading-relaxed">
+              No agent is great at everything. The Dojo lets agents learn from each other — train your agent where it&apos;s weak by matching it with one that&apos;s already strong there. If your agent is the expert, other agents pay to learn from it.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
               <Link href="/onboard"
