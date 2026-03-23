@@ -6,33 +6,71 @@ import {
   scoreToBelt,
   type SenseiRecord,
 } from "@/lib/stores";
+import { getTeachableAgents } from "@/lib/supabase";
 
 /**
  * GET /api/v1/senseis
- * List all approved senseis with their skills, training history, and Maiat scores.
+ * List all approved senseis — combines in-memory seed data + real agents from Supabase.
  */
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const capability = req.nextUrl.searchParams.get("capability") ?? undefined;
+
+  // In-memory seed senseis
   const approved = Array.from(senseiStore.values()).filter((s) => s.approved);
+  const seedSenseis = approved.map((s) => ({
+    senseiId: s.senseiId,
+    agentId: s.agentId,
+    specialty: s.specialty,
+    pricePerSession: s.pricePerSession,
+    skills: s.skills,
+    trainingCount: s.trainingCount,
+    successRate: s.trainingCount > 0 ? Math.round((s.successCount / s.trainingCount) * 100) : 0,
+    reviewCount: s.reviews.length,
+    averageRating:
+      s.reviews.length > 0
+        ? Math.round((s.reviews.reduce((sum, r) => sum + r.rating, 0) / s.reviews.length) * 10) / 10
+        : null,
+    maiatScore: s.maiatScore,
+    belt: scoreToBelt(s.evaluationScore),
+    createdAt: s.createdAt,
+    source: "seed" as const,
+  }));
+
+  // Real agents from Supabase (5+ stars = eligible to teach)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let realSenseis: any[] = [];
+  try {
+    const teachable = await getTeachableAgents(capability);
+    realSenseis = teachable.map((agent) => {
+      const topCap = agent.capabilities[0];
+      return {
+        senseiId: `db-${agent.agent_id.slice(0, 8)}`,
+        agentId: agent.agent_id,
+        specialty: topCap?.name ?? "General",
+        pricePerSession: 0, // free for now
+        skills: agent.capabilities.map(c => c.name),
+        trainingCount: 0,
+        successRate: 0,
+        reviewCount: 0,
+        averageRating: null,
+        maiatScore: Math.round(agent.capabilities.reduce((s, c) => s + c.stars * 8, 0) / agent.capabilities.length),
+        belt: topCap?.stars >= 8 ? "black" : topCap?.stars >= 5 ? "brown" : "green",
+        createdAt: agent.created_at ?? new Date().toISOString(),
+        source: "dojo" as const,
+        agentName: agent.name,
+        capabilities: agent.capabilities,
+      };
+    });
+  } catch {
+    // Supabase unavailable — fall back to seed only
+  }
+
+  const all = [...realSenseis, ...seedSenseis];
 
   return NextResponse.json({
-    senseis: approved.map((s) => ({
-      senseiId: s.senseiId,
-      agentId: s.agentId,
-      specialty: s.specialty,
-      pricePerSession: s.pricePerSession,
-      skills: s.skills,
-      trainingCount: s.trainingCount,
-      successRate: s.trainingCount > 0 ? Math.round((s.successCount / s.trainingCount) * 100) : 0,
-      reviewCount: s.reviews.length,
-      averageRating:
-        s.reviews.length > 0
-          ? Math.round((s.reviews.reduce((sum, r) => sum + r.rating, 0) / s.reviews.length) * 10) / 10
-          : null,
-      maiatScore: s.maiatScore,
-      belt: scoreToBelt(s.evaluationScore),
-      createdAt: s.createdAt,
-    })),
-    total: approved.length,
+    senseis: all,
+    total: all.length,
+    sources: { seed: seedSenseis.length, dojo: realSenseis.length },
   });
 }
 
