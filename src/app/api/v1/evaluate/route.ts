@@ -11,6 +11,7 @@ import {
   computeOverallScore,
   recommendBelt,
 } from "@/lib/evaluation-engine";
+import { evaluationStore as sharedEvalStore } from "@/lib/stores";
 
 // ─── In-memory store ──────────────────────────────────────────────────────────
 // Shared with the GET [agentId] route via module-level singleton.
@@ -106,6 +107,25 @@ export async function POST(req: NextRequest) {
   };
 
   evaluationStore.set(agentId, report);
+
+  // Also write to shared store so /api/v1/passport can find this evaluation
+  const domainMap: Record<string, string> = {
+    code: "Code", research: "Research", creative: "Creative",
+    operations: "Ops", safety: "Safety",
+  };
+  sharedEvalStore.set(agentId, {
+    agentId,
+    agentName: name,
+    overallScore: overall_score,
+    safetyScore: domains.safety ?? 40,
+    domains: Object.entries(domains).map(([key, score]) => ({
+      domain: domainMap[key] ?? key,
+      score: score as number,
+      verdict: (score as number) >= 70 ? "Strong" : (score as number) >= 50 ? "Capable" : "Developing",
+    })),
+    passportReady: !fraud_check.is_suspicious,
+    timestamp: new Date().toISOString(),
+  });
 
   return NextResponse.json(report, { status: 201 });
 }
