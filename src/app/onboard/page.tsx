@@ -87,8 +87,11 @@ function inferCapabilities(data: {
   const desc = data.description.toLowerCase();
   const langs = data.languages.map(l => l.toLowerCase());
 
-  // Star calculation: each piece of verified evidence earns stars
-  // Stars have NO CAP — more work = more stars
+  // Star calculation rules:
+  // - Platform-verified data (GitHub repos, npm, deployments) = bulk of stars
+  // - Description keywords ALONE = MAX 1 star per capability (unverified claim)
+  // - Stars have NO CAP from verified sources — more real work = more stars
+  const hasVerifiedData = data.repos > 0 || data.npmPackages > 0 || data.liveDeployments > 0;
 
   // ── Smart Contract / Blockchain ──
   if (data.solidityRepos > 0 || desc.includes("solidity") || desc.includes("smart contract") || desc.includes("anchor")) {

@@ -28,9 +28,34 @@ import {
 // Replace with Supabase in production.
 export const evaluationStore = new Map<string, EvaluationReport>();
 
+// ─── Rate Limiting (simple in-memory, per IP) ────────────────────────────────
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT = 10; // max evaluations per window
+const RATE_WINDOW = 60 * 60 * 1000; // 1 hour
+
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(ip);
+  if (!entry || now > entry.resetAt) {
+    rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_WINDOW });
+    return true;
+  }
+  if (entry.count >= RATE_LIMIT) return false;
+  entry.count++;
+  return true;
+}
+
 // ─── POST /api/v1/evaluate ────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
+  // Rate limiting
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? req.headers.get("x-real-ip") ?? "unknown";
+  if (!checkRateLimit(ip)) {
+    return NextResponse.json(
+      { error: "Rate limit exceeded. Max 10 evaluations per hour." },
+      { status: 429 }
+    );
+  }
   let body: unknown;
   try {
     body = await req.json();
