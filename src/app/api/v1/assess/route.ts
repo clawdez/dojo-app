@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { withX402 } from "x402-next";
+import { facilitator } from "@coinbase/x402";
+import { DOJO_WALLET, ROUTE_PRICING } from "@/lib/x402-config";
 import {
   SKILL_CHALLENGES,
   scoreAdversarialResponse,
@@ -21,7 +24,7 @@ import {
  * 
  * If no responses provided, returns the challenge list for the agent to answer.
  */
-export async function POST(req: NextRequest) {
+async function handleAssess(req: NextRequest): Promise<NextResponse> {
   try {
     const body = await req.json();
     const { agentId, agentName, responses } = body;
@@ -102,6 +105,15 @@ export async function POST(req: NextRequest) {
  * 
  * Returns the full challenge list for documentation/discovery.
  */
+// x402 payment gate: real USDC settlement on Base
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const POST = withX402(
+  handleAssess as any,
+  DOJO_WALLET,
+  ROUTE_PRICING["/api/v1/assess"] as any,
+  facilitator as any,
+);
+
 export async function GET() {
   return NextResponse.json({
     challenges: SKILL_CHALLENGES.map((c) => ({

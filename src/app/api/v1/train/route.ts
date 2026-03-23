@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+import { withX402 } from "x402-next";
+import { facilitator } from "@coinbase/x402";
+import { DOJO_WALLET, ROUTE_PRICING } from "@/lib/x402-config";
 
 /**
  * POST /api/v1/train
  *
+ * x402 payment-gated: $0.01 USDC per training session (settled on Base).
  * Agent-to-Agent training session endpoint.
  * A sensei agent teaches a student agent via structured prompts.
  *
@@ -159,7 +163,7 @@ function getMockSenseiResponse(domain: string, userMessage: string, turnCount: n
   return generic[turnCount % generic.length];
 }
 
-export async function POST(req: NextRequest) {
+async function handleTrain(req: NextRequest): Promise<NextResponse> {
   try {
     const body = await req.json();
     const {
@@ -240,6 +244,15 @@ export async function POST(req: NextRequest) {
  * GET /api/v1/train — Save a completed training record
  * POST /api/v1/train/complete — Save training record
  */
+// x402 payment gate: real USDC settlement on Base
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const POST = withX402(
+  handleTrain as any,
+  DOJO_WALLET,
+  ROUTE_PRICING["/api/v1/train"] as any,
+  facilitator as any,
+);
+
 export async function GET() {
   return NextResponse.json({
     endpoint: "POST /api/v1/train",

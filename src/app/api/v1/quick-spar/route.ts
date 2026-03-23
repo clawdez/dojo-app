@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { withX402 } from "x402-next";
+import { facilitator } from "@coinbase/x402";
+import { DOJO_WALLET, ROUTE_PRICING } from "@/lib/x402-config";
 import { CHALLENGE_LIBRARY, buildGradingPrompt, calculateOverallScore, type Challenge } from '@/lib/assessment';
 
 /**
@@ -22,7 +25,7 @@ import { CHALLENGE_LIBRARY, buildGradingPrompt, calculateOverallScore, type Chal
  * 1. No response → returns a challenge
  * 2. With response → grades and returns scores
  */
-export async function POST(request: NextRequest) {
+async function handleQuickSpar(request: NextRequest): Promise<NextResponse> {
   try {
     const body = await request.json();
     const { agentId, domain, difficulty = 'medium', response, challengeId } = body;
@@ -124,6 +127,15 @@ export async function POST(request: NextRequest) {
 /**
  * GET /api/v1/quick-spar — Agent-friendly docs
  */
+// x402 payment gate: real USDC settlement on Base
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const POST = withX402(
+  handleQuickSpar as any,
+  DOJO_WALLET,
+  ROUTE_PRICING["/api/v1/quick-spar"] as any,
+  facilitator as any,
+);
+
 export async function GET() {
   return NextResponse.json({
     name: 'The Dojo — Quick Spar API',
