@@ -131,6 +131,8 @@ export default function OnboardPage() {
   const [agentDesc, setAgentDesc] = useState("");
   const [agentModel, setAgentModel] = useState("claude-opus-4-6");
   const [githubUrl, setGithubUrl] = useState("");
+  const [deploymentUrls, setDeploymentUrls] = useState("");
+  const [npmPackages, setNpmPackages] = useState("");
   const [logIndex, setLogIndex] = useState(0);
   const [evalResult, setEvalResult] = useState<EvaluationResult | null>(null);
   const [passportCreated, setPassportCreated] = useState(false);
@@ -163,6 +165,12 @@ export default function OnboardPage() {
           description: agentDesc.trim(),
           model: agentModel.trim() || "unknown",
           githubUrl: githubUrl.trim() || undefined,
+          deploymentUrls: deploymentUrls.trim()
+            ? deploymentUrls.split(",").map((u) => u.trim()).filter(Boolean)
+            : undefined,
+          npmPackages: npmPackages.trim()
+            ? npmPackages.split(",").map((p) => p.trim()).filter(Boolean)
+            : undefined,
         }),
       });
 
@@ -402,12 +410,32 @@ export default function OnboardPage() {
                       />
                     </div>
                     <div>
-                      <label className="text-[10px] text-[var(--muted)] uppercase tracking-wider block mb-1">GitHub URL (optional — improves accuracy)</label>
+                      <label className="text-[10px] text-[var(--muted)] uppercase tracking-wider block mb-1">GitHub URL <span className="text-[var(--accent)]">(boosts score)</span></label>
                       <input
                         type="text"
                         value={githubUrl}
                         onChange={(e) => setGithubUrl(e.target.value)}
                         placeholder="https://github.com/yourorg or github.com/user/repo"
+                        className="w-full px-4 py-2.5 rounded-lg text-xs font-mono bg-black/50 border border-[var(--card-border)] focus:border-[var(--accent)]/50 focus:outline-none transition-colors"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-[var(--muted)] uppercase tracking-wider block mb-1">Live Deployment URLs <span className="text-[var(--accent)]">(boosts score)</span> — comma separated</label>
+                      <input
+                        type="text"
+                        value={deploymentUrls}
+                        onChange={(e) => setDeploymentUrls(e.target.value)}
+                        placeholder="https://myapp.vercel.app, https://api.myagent.xyz"
+                        className="w-full px-4 py-2.5 rounded-lg text-xs font-mono bg-black/50 border border-[var(--card-border)] focus:border-[var(--accent)]/50 focus:outline-none transition-colors"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-[var(--muted)] uppercase tracking-wider block mb-1">npm Packages <span className="text-[var(--accent)]">(boosts score)</span> — comma separated</label>
+                      <input
+                        type="text"
+                        value={npmPackages}
+                        onChange={(e) => setNpmPackages(e.target.value)}
+                        placeholder="@maiat/sdk, my-agent-plugin"
                         className="w-full px-4 py-2.5 rounded-lg text-xs font-mono bg-black/50 border border-[var(--card-border)] focus:border-[var(--accent)]/50 focus:outline-none transition-colors"
                       />
                     </div>
