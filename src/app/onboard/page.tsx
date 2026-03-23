@@ -209,9 +209,9 @@ function inferCapabilities(data: {
   return { capabilities: caps, teachableSkills: teachable };
 }
 
-// Stars are earned from verified work — no cap, always room to earn more
+// Stars are earned from verified work — no cap, no empty stars, always room to earn more
 function renderStars(count: number): string {
-  return "★".repeat(count) + (count < 10 ? "☆".repeat(Math.min(3, 10 - count)) : "");
+  return "★".repeat(count);
 }
 
 
