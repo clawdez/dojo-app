@@ -150,12 +150,16 @@ function inferCapabilities(data: {
   }
 
   // ── Research & Analysis ──
-  if (desc.includes("research") || desc.includes("analysis") || desc.includes("rag") || desc.includes("data")) {
+  if (desc.includes("research") || desc.includes("analysis") || desc.includes("rag") || desc.includes("data") || desc.includes("intel")) {
     let stars = 2;
     if (desc.includes("deep") || desc.includes("expert")) stars += 2;
-    if (desc.includes("rag") || desc.includes("retrieval")) stars += 1;
-    if (desc.includes("competitive") || desc.includes("market")) stars += 1;
-    caps.push({ name: "Research & Analysis", emoji: "🔍", stars, evidence: "described in profile", trainSuggestion: "Advanced RAG pipelines & knowledge synthesis", color: "#ffcc00" });
+    if (desc.includes("rag") || desc.includes("retrieval")) stars += 2;
+    if (desc.includes("competitive") || desc.includes("market") || desc.includes("intel")) stars += 1;
+    if (desc.includes("synthesis") || desc.includes("summariz")) stars += 1;
+    if (desc.includes("web") || desc.includes("search") || desc.includes("scraping")) stars += 1;
+    // GitHub doc repos count as research evidence
+    if (data.topRepos.some(r => r.description?.toLowerCase().includes("research") || r.description?.toLowerCase().includes("doc") || r.name.toLowerCase().includes("research"))) stars += 2;
+    caps.push({ name: "Research & Analysis", emoji: "🔍", stars, evidence: data.topRepos.some(r => r.name.toLowerCase().includes("research")) ? "research repos detected" : "described in profile", trainSuggestion: "Advanced RAG pipelines & knowledge synthesis", color: "#ffcc00" });
     if (stars >= 5) teachable.push("Research methodology & data analysis");
   }
 
@@ -184,8 +188,12 @@ function inferCapabilities(data: {
   if (desc.includes("content") || desc.includes("marketing") || desc.includes("writing") || desc.includes("copy") || desc.includes("social")) {
     let stars = 2;
     if (desc.includes("automat")) stars += 2;
-    if (desc.includes("social media") || desc.includes("tiktok") || desc.includes("twitter")) stars += 1;
+    if (desc.includes("social media") || desc.includes("tiktok") || desc.includes("twitter") || desc.includes("instagram")) stars += 2;
     if (desc.includes("seo") || desc.includes("growth")) stars += 1;
+    if (desc.includes("a/b") || desc.includes("test")) stars += 1;
+    if (desc.includes("viral") || desc.includes("views") || desc.includes("engagement")) stars += 1;
+    if (desc.includes("revenue") || desc.includes("attribution") || desc.includes("tracking")) stars += 1;
+    if (desc.includes("schedule") || desc.includes("pipeline") || desc.includes("workflow")) stars += 1;
     caps.push({ name: "Content & Marketing", emoji: "✍️", stars, evidence: "described in profile", trainSuggestion: "Growth loops & automated content pipelines", color: "#ff88cc" });
     if (stars >= 5) teachable.push("Automated content marketing");
   }
@@ -642,25 +650,39 @@ export default function OnboardPage() {
                 </div>
               )}
 
-              {/* Fraud Check */}
+              {/* Verification Status */}
               <div className="rounded-xl p-6 space-y-3" style={{ background: "var(--card)", border: "1px solid var(--card-border)" }}>
                 <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--muted)]">Verification Status</h3>
                 {portfolio.fraudCheck.isSuspicious ? (
                   <div className="flex items-start gap-3 px-3 py-2 rounded-lg bg-red-500/5">
                     <span>⚠️</span>
                     <div>
-                      <p className="text-xs font-medium text-red-400">Flags detected</p>
+                      <p className="text-xs font-medium text-red-400">Suspicious patterns detected</p>
                       {portfolio.fraudCheck.flags.map((flag, i) => (
                         <p key={i} className="text-[10px] text-[var(--muted)]">• {flag.replace(/_/g, " ")}</p>
                       ))}
+                    </div>
+                  </div>
+                ) : portfolio.fraudCheck.flags.length > 0 ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-green-500/5">
+                      <span>✅</span>
+                      <p className="text-xs font-medium text-green-400">Passed — no suspicious activity</p>
+                    </div>
+                    <div className="px-3">
+                      <p className="text-[10px] text-[var(--muted)] mb-1">Notes:</p>
+                      {portfolio.fraudCheck.flags.map((flag, i) => (
+                        <p key={i} className="text-[10px] text-yellow-400/70">⚡ {flag.replace(/_/g, " ")}</p>
+                      ))}
+                      <p className="text-[10px] text-[var(--muted)] mt-1 italic">Connect more platforms to strengthen your portfolio</p>
                     </div>
                   </div>
                 ) : (
                   <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-green-500/5">
                     <span>✅</span>
                     <div>
-                      <p className="text-xs font-medium text-green-400">All checks passed</p>
-                      <p className="text-[10px] text-[var(--muted)]">No suspicious patterns detected</p>
+                      <p className="text-xs font-medium text-green-400">Fully verified</p>
+                      <p className="text-[10px] text-[var(--muted)]">All connected platforms checked, no issues found</p>
                     </div>
                   </div>
                 )}
