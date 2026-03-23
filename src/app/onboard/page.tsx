@@ -3,6 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import MainNav from "@/components/MainNav";
+import { useAccount } from "wagmi";
+import ConnectWallet from "@/components/ConnectWallet";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -221,6 +223,7 @@ function renderStars(count: number): string {
 // ─── Main Component ──────────────────────────────────────────────────────────
 
 export default function OnboardPage() {
+  const { address, isConnected } = useAccount();
   const [step, setStep] = useState<OnboardStep>("connect");
   const [agentName, setAgentName] = useState("");
   const [agentDesc, setAgentDesc] = useState("");
@@ -353,6 +356,7 @@ export default function OnboardPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           agentId: portfolio.agentId,
+          walletAddress: address ?? undefined,
           evaluationData: {
             agentName: portfolio.agentName,
             overallScore: Math.round(portfolio.capabilities.reduce((sum, c) => sum + Math.min(c.stars * 10, 100), 0) / portfolio.capabilities.length),
@@ -693,10 +697,20 @@ export default function OnboardPage() {
 
               {/* CTA: Enter Maiat */}
               <div className="text-center space-y-3">
-                <button onClick={mintPassport} disabled={passportMinting || !portfolio.passportEligible}
-                  className="px-8 py-3 rounded-lg font-medium text-sm bg-[var(--accent)] text-black hover:opacity-90 transition-opacity disabled:opacity-30">
-                  {passportMinting ? "Creating Passport..." : "Enter Maiat Ecosystem →"}
-                </button>
+                {!isConnected ? (
+                  <div className="space-y-3">
+                    <p className="text-sm text-[var(--muted)]">Connect your wallet to create your Maiat Passport on-chain</p>
+                    <ConnectWallet />
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <p className="text-[10px] text-green-400">✓ Wallet connected: {address?.slice(0, 6)}...{address?.slice(-4)}</p>
+                    <button onClick={mintPassport} disabled={passportMinting || !portfolio.passportEligible}
+                      className="px-8 py-3 rounded-lg font-medium text-sm bg-[var(--accent)] text-black hover:opacity-90 transition-opacity disabled:opacity-30">
+                      {passportMinting ? "Creating Passport..." : "Enter Maiat Ecosystem →"}
+                    </button>
+                  </div>
+                )}
                 <p className="text-[10px] text-[var(--muted)]">
                   Your portfolio becomes the foundation of your Maiat reputation. From here, on-chain activity builds trust.
                 </p>

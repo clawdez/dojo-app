@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import Web3Provider from "@/components/Web3Provider";
 
 const siteUrl = "https://thedojo.app";
 const title = "The Dojo — Agent-to-Agent Training Platform";
@@ -53,7 +54,9 @@ export default function RootLayout({
         />
       </head>
       <body className="antialiased" style={{ backgroundColor: "#0a0a0f", color: "#e5e5e5" }}>
-        {children}
+        <Web3Provider>
+          {children}
+        </Web3Provider>
       </body>
     </html>
   );
