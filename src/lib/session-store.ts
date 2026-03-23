@@ -53,7 +53,7 @@ export function getSession(id: string): TrainingSession | null {
   return activeSessions.get(id) ?? completedSessions.get(id) ?? null;
 }
 
-export function nextSessionStep(id: string, traineeAttempt?: string): { session: TrainingSession; step: SessionStepRecord } {
+export async function nextSessionStep(id: string, traineeAttempt?: string): Promise<{ session: TrainingSession; step: SessionStepRecord }> {
   const session = activeSessions.get(id) ?? completedSessions.get(id);
   if (!session) {
     throw new Error("Session not found");
@@ -63,7 +63,7 @@ export function nextSessionStep(id: string, traineeAttempt?: string): { session:
     return { session, step: session.steps[session.steps.length - 1] };
   }
 
-  const result = advanceSession(session, traineeAttempt);
+  const result = await advanceSession(session, traineeAttempt);
 
   if (result.session.status === "completed") {
     activeSessions.delete(session.id);

@@ -207,11 +207,63 @@ export function getScript(skillDomain: SkillDomain): TrainingScript {
   return SCRIPTS[skillDomain];
 }
 
-export function evaluatePracticeAttempt(skillDomain: SkillDomain, attempt: string): PracticeEvaluation {
+export async function evaluatePracticeAttempt(skillDomain: SkillDomain, attempt: string): Promise<PracticeEvaluation> {
   const practiceStep = getScript(skillDomain).steps.find((step) => step.type === "practice");
   const expected = practiceStep?.expectedKeywords ?? [];
-  const normalized = attempt.toLowerCase();
+  const script = getScript(skillDomain);
 
+  // Try LLM evaluation first
+  const apiKey = process.env.LLM_API_KEY || process.env.ANTHROPIC_API_KEY;
+  if (apiKey && attempt.length > 10) {
+    try {
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": apiKey,
+          "anthropic-version": "2023-06-01",
+        },
+        body: JSON.stringify({
+          model: "claude-3-5-haiku-20241022",
+          max_tokens: 300,
+          messages: [{
+            role: "user",
+            content: `You are evaluating an AI agent's training response in the "${script.skillLabel}" domain.
+
+The agent was asked to demonstrate their approach. Here is their response:
+"${attempt}"
+
+Expected concepts to cover: ${expected.join(", ")}
+
+Evaluate the response. Return ONLY valid JSON:
+{"score": <0-100>, "strengths": ["..."], "gaps": ["..."], "summary": "<1 sentence feedback>"}
+
+Score guide: 90+ = excellent coverage, 70-89 = good, 50-69 = partial, below 50 = needs work.`
+          }],
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const text = data.content?.[0]?.text ?? "";
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          const parsed = JSON.parse(jsonMatch[0]);
+          return {
+            score: Math.min(100, Math.max(0, parsed.score ?? 50)),
+            matchedKeywords: parsed.strengths ?? [],
+            missedKeywords: parsed.gaps ?? [],
+            summary: parsed.summary ?? "Evaluated by AI judge.",
+          };
+        }
+      }
+    } catch {
+      // Fall through to keyword matching
+    }
+  }
+
+  // Fallback: keyword matching
+  const normalized = attempt.toLowerCase();
   const matchedKeywords = expected.filter((keyword) => normalized.includes(keyword));
   const missedKeywords = expected.filter((keyword) => !normalized.includes(keyword));
   const score = Math.round((matchedKeywords.length / Math.max(1, expected.length)) * 100);
@@ -273,10 +325,10 @@ export function createSession(args: {
   };
 }
 
-export function advanceSession(
+export async function advanceSession(
   session: TrainingSession,
   traineeAttempt?: string,
-): { session: TrainingSession; latestStep: SessionStepRecord } {
+): Promise<{ session: TrainingSession; latestStep: SessionStepRecord }> {
   if (session.status === "completed") {
     return { session, latestStep: session.steps[session.steps.length - 1] };
   }
@@ -287,7 +339,7 @@ export function advanceSession(
 
   if (currentScriptStep.type === "practice") {
     const attempt = (traineeAttempt ?? "").trim();
-    const evaluation = evaluatePracticeAttempt(session.skillDomain, attempt);
+    const evaluation = await evaluatePracticeAttempt(session.skillDomain, attempt);
     currentRecord.traineeAttempt = attempt;
     currentRecord.evaluation = evaluation;
   }
@@ -307,7 +359,7 @@ export function advanceSession(
   };
 
   if (nextScriptStep.type === "feedback") {
-    const evaluation = currentRecord.evaluation ?? evaluatePracticeAttempt(session.skillDomain, "");
+    const evaluation = currentRecord.evaluation ?? await evaluatePracticeAttempt(session.skillDomain, "");
     nextRecord.evaluation = evaluation;
     nextRecord.trainerMessage = buildFeedbackMessage(session.skillDomain, evaluation);
   }

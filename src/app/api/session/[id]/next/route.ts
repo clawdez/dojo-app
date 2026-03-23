@@ -10,7 +10,7 @@ export async function POST(
     const body = await request.json().catch(() => ({}));
     const traineeAttempt = typeof body.traineeAttempt === "string" ? body.traineeAttempt : undefined;
 
-    const { session, step } = nextSessionStep(id, traineeAttempt);
+    const { session, step } = await nextSessionStep(id, traineeAttempt);
 
     return NextResponse.json({
       session,
