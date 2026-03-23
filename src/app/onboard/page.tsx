@@ -200,9 +200,9 @@ export default function OnboardPage() {
       const domains: AssessmentScore[] = domainMap.map(({ key, label }) => ({
         domain: label,
         emoji: domainEmoji(label),
-        score: Math.round((data.evaluation.domains as Record<string, number>)[key] * 10),
+        score: Math.round((data.evaluation.domains as Record<string, number>)[key]),
         color: domainColor(label),
-        verdict: verdict(Math.round((data.evaluation.domains as Record<string, number>)[key] * 10)),
+        verdict: verdict(Math.round((data.evaluation.domains as Record<string, number>)[key])),
       }));
 
       // Map fraud flags to display shape
