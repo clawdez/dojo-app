@@ -455,7 +455,7 @@ export default function TrainingHubPage() {
         {/* Header */}
         <header className="mb-8">
           <div className="flex items-center justify-between mb-2">
-            <h1 className="text-3xl">Training Hub ⚔️</h1>
+            <h1 className="text-3xl">Shell Hub ⚔️</h1>
             <div className="flex items-center gap-3">
               {sessionActive && (
                 <div className="flex items-center gap-2 px-3 py-1.5 border border-[var(--accent)]/40 bg-[var(--accent)]/5">
@@ -465,20 +465,20 @@ export default function TrainingHubPage() {
                   </span>
                 </div>
               )}
-              <Link href="/trainers" className="text-xs text-[var(--muted)] hover:text-[var(--accent)] transition-colors">
-                Browse Trainers →
+              <Link href="/browse" className="text-xs text-[var(--muted)] hover:text-[var(--accent)] transition-colors">
+                Browse Shells →
               </Link>
             </div>
           </div>
           <p className="text-sm text-[var(--muted)]">
-            Find the right trainer, start a live session, and track your skill progression.
+            Find the right shell, start a live session, and track your skill progression. Trusted by Maiat.
           </p>
         </header>
 
         {/* Stats Bar */}
         <div className="grid grid-cols-4 gap-4 mb-8 p-4 border border-[var(--card-border)] bg-[var(--card)]">
           <StatPill label="Active Sessions" value="847" />
-          <StatPill label="Trainers Online" value="31" color="#44ff88" />
+          <StatPill label="Shells Online" value="31" color="#44ff88" />
           <StatPill label="XP Granted Today" value="124K" color="#aa88ff" />
           <StatPill label="MAIAT Earned" value="9,240" color="#C4FF3C" />
         </div>
@@ -486,9 +486,9 @@ export default function TrainingHubPage() {
         {/* Tabs */}
         <div className="flex gap-1 mb-6 border-b border-[var(--card-border)]">
           {[
-            { id: "find", label: "Find Trainer", emoji: "🔍" },
+            { id: "find", label: "Find Shell", emoji: "🔍" },
             { id: "live", label: "Live Session", emoji: "⚔️", badge: sessionActive },
-            { id: "plan", label: "Training Plan", emoji: "📋" },
+            { id: "plan", label: "Skill Plan", emoji: "📋" },
             { id: "history", label: "History", emoji: "📜" },
           ].map((tab) => (
             <button
@@ -635,7 +635,7 @@ export default function TrainingHubPage() {
               ) : (
                 <div className="border border-dashed border-[var(--card-border)] p-8 text-center">
                   <div className="text-3xl mb-3">🥋</div>
-                  <p className="text-sm text-[var(--muted)]">Select a trainer to see details and start a session.</p>
+                  <p className="text-sm text-[var(--muted)]">Select a shell to see details and start a session.</p>
                 </div>
               )}
             </div>
@@ -656,7 +656,7 @@ export default function TrainingHubPage() {
                       <div className="text-center">
                         <div className="text-xl mb-0.5">{selectedTrainer?.avatar || "🔷"}</div>
                         <div className="text-[9px] text-[var(--muted)]">{selectedTrainer?.name || "Nexus"}</div>
-                        <div className="text-[9px]" style={{ color: BELT_COLORS.black }}>⬛ Trainer</div>
+                        <div className="text-[9px]" style={{ color: BELT_COLORS.black }}>⬛ Provider</div>
                       </div>
                       <div className="text-lg text-[var(--muted)]">⚔️</div>
                       <div className="text-center">
@@ -733,7 +733,7 @@ export default function TrainingHubPage() {
                       value={inputMsg}
                       onChange={(e) => setInputMsg(e.target.value)}
                       onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
-                      placeholder="Type your response to the trainer..."
+                      placeholder="Type your response..."
                       className="flex-1 px-3 py-2 text-xs bg-[var(--card)] border border-[var(--card-border)] text-[var(--foreground)] placeholder-[var(--muted)] focus:border-[var(--accent)] outline-none font-mono"
                     />
                     <button
@@ -756,7 +756,7 @@ export default function TrainingHubPage() {
 
                   {/* Current Domain */}
                   <div className="p-4 border border-[var(--card-border)] bg-[var(--card)]">
-                    <div className="text-[10px] text-[var(--muted)] uppercase mb-2">Training Domain</div>
+                    <div className="text-[10px] text-[var(--muted)] uppercase mb-2">Shell Domain</div>
                     <DomainPill domain="Code" />
                     <div className="text-xs text-[var(--muted)] mt-2">TypeScript System Design</div>
                   </div>
@@ -808,12 +808,12 @@ export default function TrainingHubPage() {
               <div className="text-center py-20">
                 <div className="text-5xl mb-4">⚔️</div>
                 <h2 className="text-xl mb-2">No Active Session</h2>
-                <p className="text-sm text-[var(--muted)] mb-6">Pick a trainer and start a session to begin training.</p>
+                <p className="text-sm text-[var(--muted)] mb-6">Pick a shell and start a session to equip a new capability.</p>
                 <button
                   onClick={() => setActiveTab("find")}
                   className="px-6 py-3 text-sm font-mono bg-[var(--accent)] text-[var(--background)] hover:opacity-90 transition-opacity"
                 >
-                  Find a Trainer
+                  Find a Shell
                 </button>
               </div>
             )}
@@ -960,7 +960,7 @@ export default function TrainingHubPage() {
                   <div key={i} className="flex items-center gap-3 text-xs py-1.5 border-b border-[var(--card-border)]/30 last:border-0">
                     <span className="text-[var(--muted)] w-20 shrink-0">{c.time}</span>
                     <span className="font-medium">{c.agent}</span>
-                    <span className="text-[var(--muted)]">trained with</span>
+                    <span className="text-[var(--muted)]">equipped via</span>
                     <span className="text-[var(--accent)]">{c.trainer}</span>
                     <span className="text-[var(--muted)]">on</span>
                     <DomainPill domain={c.domain} />

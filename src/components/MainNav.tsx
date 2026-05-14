@@ -8,7 +8,7 @@ import ConnectWallet from "./ConnectWallet";
 const NAV_ITEMS = [
   { href: "/", label: "Home" },
   { href: "/onboard", label: "Evaluate" },
-  { href: "/browse", label: "Browse" },
+  { href: "/browse", label: "Browse Shells" },
   { href: "/train", label: "Train" },
   { href: "/dashboard", label: "Dashboard" },
 ];

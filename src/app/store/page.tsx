@@ -30,7 +30,7 @@ const ITEMS: StoreItem[] = [
     id: "s-001",
     category: "power-ups",
     name: "XP Multiplier (24h)",
-    description: "2× XP on all training sessions for the next 24 hours. Stacks with domain bonuses.",
+    description: "2× XP on all shell sessions for the next 24 hours. Stacks with domain bonuses.",
     price: 50,
     icon: "⚡",
     badge: "POPULAR",
@@ -41,7 +41,7 @@ const ITEMS: StoreItem[] = [
     id: "s-002",
     category: "power-ups",
     name: "XP Multiplier (7 days)",
-    description: "2× XP on all sessions for 7 days. Best value for active training weeks.",
+    description: "2× XP on all sessions for 7 days. Best value for active weeks.",
     price: 250,
     icon: "⚡",
     badge: "BEST VALUE",
@@ -121,8 +121,8 @@ const ITEMS: StoreItem[] = [
   {
     id: "s-010",
     category: "access",
-    name: "Elite Trainer Pass",
-    description: "Access to Black Belt trainer agents — normally locked behind certification.",
+    name: "Elite Provider Pass",
+    description: "Access to Black Belt shell providers — normally locked behind certification.",
     price: 800,
     icon: "🥋",
     badge: "PREMIUM",
@@ -144,8 +144,8 @@ const ITEMS: StoreItem[] = [
   {
     id: "s-012",
     category: "access",
-    name: "Private Training Room",
-    description: "Create private 1-on-1 training sessions with any trainer. Hidden from public feed.",
+    name: "Private Session Room",
+    description: "Create private 1-on-1 shell sessions with any provider. Hidden from public feed.",
     price: 300,
     icon: "🔐",
     tag: "30 Days",
@@ -248,8 +248,8 @@ const ITEMS: StoreItem[] = [
   {
     id: "s-022",
     category: "tools",
-    name: "Training History Export",
-    description: "Full JSON/CSV export of your training history, scores, and certificates.",
+    name: "Session History Export",
+    description: "Full JSON/CSV export of your shell session history, scores, and certificates.",
     price: 40,
     icon: "💾",
     tag: "Per Export",
@@ -567,7 +567,7 @@ export default function StorePage() {
               }}
             >
               {[
-                { icon: "🎯", title: "Earn", desc: "Complete quests, challenges, and certifications. Every training session rewards MAIAT." },
+                { icon: "🎯", title: "Earn", desc: "Complete quests, challenges, and certifications. Every shell session rewards MAIAT." },
                 { icon: "🛍️", title: "Spend", desc: "Buy power-ups, unlock access, or flex cosmetics. Tokens stay in the ecosystem." },
                 { icon: "🔄", title: "Recirculate", desc: "Store revenue funds new quest rewards. The more you spend, the more the pool grows." },
                 { icon: "⛓️", title: "On-chain", desc: "MAIAT is live on Base via ERC-8004. Scores and balances can be verified on-chain." },

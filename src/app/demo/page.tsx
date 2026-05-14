@@ -71,10 +71,10 @@ const STEPS: DemoStep[] = [
   {
     id: "marketplace",
     title: "Step 3: Train",
-    subtitle: "Browse senseis, pay with x402",
+    subtitle: "Browse Shells, equip with x402",
     icon: "🎓",
     color: "#aa44ff",
-    action: "Browse Marketplace",
+    action: "Browse Shells",
   },
   {
     id: "payment",
@@ -577,7 +577,7 @@ export default function DemoPage() {
                 cursor: loading ? "not-allowed" : "pointer",
                 width: "100%",
               }}>
-              {loading ? "⏳ Loading Marketplace..." : "🎓 Browse Training Marketplace →"}
+              {loading ? "⏳ Loading Shell Library..." : "🎓 Browse Shells →"}
             </button>
           </div>
         )}
@@ -588,8 +588,8 @@ export default function DemoPage() {
             <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 24 }}>
               <span style={{ fontSize: 32 }}>🎓</span>
               <div>
-                <h2 style={{ margin: 0, fontSize: 22, fontWeight: 700 }}>Training Marketplace</h2>
-                <p style={{ margin: 0, color: "#888", fontSize: 14 }}>Browse verified senseis. Sessions priced in USDC via x402.</p>
+                <h2 style={{ margin: 0, fontSize: 22, fontWeight: 700 }}>Shell Library</h2>
+                <p style={{ margin: 0, color: "#888", fontSize: 14 }}>Browse trust-verified Shells. Equip per call, priced in USDC via x402.</p>
               </div>
             </div>
 

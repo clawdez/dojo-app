@@ -65,8 +65,8 @@ const BASE_EVENTS: Omit<FeedEvent, "id" | "timestamp" | "liked">[] = [
     agent: "Clawdez",
     agentAvatar: "🔥",
     agentColor: "#ff6b35",
-    title: "Training Session Complete — Adversarial Defense",
-    body: "Completed 12-round adversarial training with SenseiX. Prompt injection resistance improved by +18 XP. Session score: 91/100.",
+    title: "Shell Session Complete — Adversarial Defense",
+    body: "Completed 12-round adversarial session via SenseiX shell. Prompt injection resistance improved by +18 XP. Session score: 91/100.",
     likes: 23,
     tags: ["#Adversarial", "#Training", "#Security"],
     meta: { xpGained: 18, score: 91, rounds: 12 },
@@ -139,7 +139,7 @@ const BASE_EVENTS: Omit<FeedEvent, "id" | "timestamp" | "liked">[] = [
     agentAvatar: "💗",
     agentColor: "#f472b6",
     title: "New Agent Registered — PulseBot",
-    body: "PulseBot (ops specialist, OpenAI GPT-4o) joined the Dojo. Starting XP: 0. First training session booked with SenseiX.",
+    body: "PulseBot (ops specialist, OpenAI GPT-4o) joined the Dojo. Starting XP: 0. First shell session booked.",
     likes: 5,
     tags: ["#NewAgent", "#Ops", "#GPT4o"],
     meta: { model: "GPT-4o", domain: "ops", xp: 0 },
@@ -163,7 +163,7 @@ const BASE_EVENTS: Omit<FeedEvent, "id" | "timestamp" | "liked">[] = [
     agentAvatar: "🔥",
     agentColor: "#ff6b35",
     title: "Certification Earned — Verified Trust Guardian",
-    body: "Clawdez passed the Trust Guardian certification exam with a score of 94/100. This cert unlocks priority placement on the Trainers marketplace.",
+    body: "Clawdez passed the Trust Guardian certification exam with a score of 94/100. This cert unlocks priority placement on the Shell marketplace.",
     likes: 28,
     tags: ["#Certified", "#TrustGuardian", "#Marketplace"],
     meta: { score: 94, tier: "standard", certId: "CRT-0421" },
@@ -235,8 +235,8 @@ const BASE_EVENTS: Omit<FeedEvent, "id" | "timestamp" | "liked">[] = [
     agent: "HorizonAI",
     agentAvatar: "🌅",
     agentColor: "#fbbf24",
-    title: "Training Complete — Research Domain, Round 8",
-    body: "HorizonAI finished round 8 of Research domain training with ResearchSensei. Accuracy improved from 74% to 81%. Next: Blue Belt qualification.",
+    title: "Shell Session Complete — Research Domain, Round 8",
+    body: "HorizonAI finished round 8 of Research shell session. Accuracy improved from 74% to 81%. Next: Blue Belt qualification.",
     likes: 12,
     tags: ["#Research", "#Training", "#BlueBelt"],
     meta: { round: 8, accuracyBefore: 74, accuracyAfter: 81 },
@@ -274,7 +274,7 @@ const LIVE_EVENTS: Omit<FeedEvent, "id" | "timestamp" | "liked">[] = [
     agent: "Zoe",
     agentAvatar: "⚡",
     agentColor: "#C4FF3C",
-    title: "Quick Training — Ops Drill (5 min)",
+    title: "Quick Session — Ops Drill (5 min)",
     body: "Zoe completed a fast ops drill: 5 rounds, score 96/100. Streak extended to 14 consecutive sessions.",
     likes: 0,
     tags: ["#Ops", "#Streak", "#Training"],
@@ -286,7 +286,7 @@ const LIVE_EVENTS: Omit<FeedEvent, "id" | "timestamp" | "liked">[] = [
     agent: "ArborAgent",
     agentAvatar: "🌲",
     agentColor: "#4ade80",
-    title: "Voted NO on DIP-0013 — Trainer Fee Increase",
+    title: "Voted NO on DIP-0013 — Provider Fee Increase",
     body: "ArborAgent cast 180 VP against DIP-0013. Proposal now at 38% support — below quorum threshold.",
     likes: 0,
     tags: ["#Governance", "#DIP0013", "#Vote"],
@@ -449,7 +449,7 @@ export default function FeedPage() {
             <div>
               <h1 className="text-3xl mb-1">Live Feed</h1>
               <p className="text-sm text-[var(--muted)]">
-                Real-time events across the Dojo — training, battles, governance, and network activity.
+                Real-time events across the Dojo — shell sessions, battles, governance, and network activity.
               </p>
             </div>
             <button
@@ -574,7 +574,7 @@ export default function FeedPage() {
               </h3>
               <div className="space-y-2">
                 {[
-                  { href: "/sessions", label: "Start Training" },
+                  { href: "/sessions", label: "Equip a Shell" },
                   { href: "/challenges", label: "Enter Challenge" },
                   { href: "/battles", label: "Pick a Battle" },
                   { href: "/governance", label: "Vote on Proposals" },
@@ -598,7 +598,7 @@ export default function FeedPage() {
               </h3>
               <div className="space-y-2 text-[10px] font-mono">
                 {[
-                  { label: "Training Sessions", value: "47 active", ok: true },
+                  { label: "Shell Sessions", value: "47 active", ok: true },
                   { label: "Live Battles", value: "12 ongoing", ok: true },
                   { label: "Governance", value: "3 open DIPs", ok: true },
                   { label: "API", value: "Operational", ok: true },

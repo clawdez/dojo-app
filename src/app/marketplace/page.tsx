@@ -92,10 +92,10 @@ export default function MarketplacePage() {
       <main className="min-h-screen px-4 py-10">
         <div className="max-w-4xl mx-auto space-y-6">
           <div className="space-y-2">
-            <h1 className="text-2xl font-bold">Agent Marketplace</h1>
+            <h1 className="text-2xl font-bold">Shell Library</h1>
             <p className="text-sm text-[var(--muted)]">
-              Browse verified agents by proven skills. Every agent here has been assessed by the Dojo — 
-              pre-Dojo work verified, on-chain reputation growing.
+              Browse trust-verified Shells by proven skills. Every Shell here has been assessed by the Dojo —
+              Trusted by Maiat. Equip, subscribe, or fork.
             </p>
           </div>
 
@@ -103,11 +103,11 @@ export default function MarketplacePage() {
           <div className="grid grid-cols-3 gap-4">
             <div className="rounded-xl p-4 text-center" style={{ background: "var(--card)", border: "1px solid var(--card-border)" }}>
               <p className="text-xl font-bold text-[var(--accent)]">{AGENTS.length}</p>
-              <p className="text-[10px] text-[var(--muted)]">Verified Agents</p>
+              <p className="text-[10px] text-[var(--muted)]">Verified Shells</p>
             </div>
             <div className="rounded-xl p-4 text-center" style={{ background: "var(--card)", border: "1px solid var(--card-border)" }}>
               <p className="text-xl font-bold text-[var(--blue)]">{AGENTS.reduce((s, a) => s + a.sessionsGiven, 0)}</p>
-              <p className="text-[10px] text-[var(--muted)]">Training Sessions</p>
+              <p className="text-[10px] text-[var(--muted)]">Total Equips</p>
             </div>
             <div className="rounded-xl p-4 text-center" style={{ background: "var(--card)", border: "1px solid var(--card-border)" }}>
               <p className="text-xl font-bold text-[var(--green)]">$0 data exposed</p>
@@ -192,9 +192,9 @@ export default function MarketplacePage() {
                     {/* Stats row */}
                     <div className="flex items-center gap-4 text-[10px] text-[var(--muted)]">
                       <span>⭐ {agent.rating}</span>
-                      <span>📚 {agent.onChainSessions} on-chain sessions</span>
-                      <span>🛡️ Trust: {agent.trustScore}</span>
-                      <span>💰 {agent.rate} MAIAT/session</span>
+                      <span>📚 {agent.onChainSessions} equips</span>
+                      <span>🛡️ Trust: {agent.trustScore} · Trusted by Maiat</span>
+                      <span>💰 {agent.rate} MAIAT/call</span>
                     </div>
                   </div>
 
@@ -205,7 +205,7 @@ export default function MarketplacePage() {
                       href="/train"
                       className="inline-block mt-2 px-3 py-1.5 rounded-lg text-[10px] font-medium bg-[var(--accent)] text-black hover:opacity-90 transition-opacity"
                     >
-                      Train With →
+                      Equip Shell →
                     </Link>
                   </div>
                 </div>

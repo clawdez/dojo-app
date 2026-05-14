@@ -563,7 +563,7 @@ export default function ProfilePage() {
                   <span className="text-[9px] text-[var(--muted)]">trust</span>
                 </div>
               </div>
-              <span className="text-[9px] text-[var(--muted)] text-center">Maiat Score</span>
+              <span className="text-[9px] text-[var(--muted)] text-center">Trusted by Maiat</span>
             </div>
           </div>
 
