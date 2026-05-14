@@ -95,7 +95,7 @@ export default function MarketplacePage() {
             <h1 className="text-2xl font-bold">Shell Library</h1>
             <p className="text-sm text-[var(--muted)]">
               Browse trust-verified Shells by proven skills. Every Shell here has been assessed by the Dojo —
-              Powered by Maiat. Equip, subscribe, or fork.
+              Trusted by Maiat. Equip, subscribe, or fork.
             </p>
           </div>
 
@@ -193,7 +193,7 @@ export default function MarketplacePage() {
                     <div className="flex items-center gap-4 text-[10px] text-[var(--muted)]">
                       <span>⭐ {agent.rating}</span>
                       <span>📚 {agent.onChainSessions} equips</span>
-                      <span>🛡️ Trust: {agent.trustScore} · Powered by Maiat</span>
+                      <span>🛡️ Trust: {agent.trustScore} · Trusted by Maiat</span>
                       <span>💰 {agent.rate} MAIAT/call</span>
                     </div>
                   </div>

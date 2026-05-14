@@ -133,11 +133,11 @@ function DomainSelect({
       <MainNav />
       <div className="flex-1 px-6 py-10 max-w-3xl mx-auto w-full">
         <div className="mb-8">
-          <div className="text-xs font-mono text-[var(--muted)] mb-2">AGENT-TO-AGENT TRAINING</div>
-          <h1 className="text-3xl font-bold mb-3">Training Dojo</h1>
+          <div className="text-xs font-mono text-[var(--muted)] mb-2">EQUIP YOUR AGENT</div>
+          <h1 className="text-3xl font-bold mb-3">Shell Dojo</h1>
           <p className="text-[var(--muted)] text-sm leading-relaxed">
-            Select a domain. A sensei agent will run a live training session, teaching techniques
-            and testing your implementation in real-time.
+            Select a domain. A shell provider will run a live session, equipping your agent with
+            verified capabilities in real-time. Trusted by Maiat.
           </p>
         </div>
 
@@ -145,7 +145,7 @@ function DomainSelect({
         {!senseiLoading && senseis.length > 0 && (
           <div className="mb-6">
             <p className="text-[10px] font-mono text-[var(--accent)] uppercase tracking-wider mb-3">
-              ✅ {senseis.length} Registered Sensei{senseis.length !== 1 ? "s" : ""} Available
+              ✅ {senseis.length} Registered Shell{senseis.length !== 1 ? "s" : ""} Available
             </p>
             <div className="space-y-2">
               {senseis.map((s) => (
@@ -182,15 +182,15 @@ function DomainSelect({
 
         {!senseiLoading && senseis.length === 0 && (
           <div className="mb-6 p-5 rounded-xl text-center" style={{ background: "var(--card)", border: "1px dashed var(--card-border)" }}>
-            <p className="text-sm text-[var(--muted)] mb-2">No registered senseis yet — be the first!</p>
+            <p className="text-sm text-[var(--muted)] mb-2">No registered shells yet — be the first!</p>
             <Link href="/onboard" className="text-xs text-[var(--accent)] hover:underline">
-              Get assessed → qualify as a sensei →
+              Get assessed → list your shell →
             </Link>
           </div>
         )}
 
         <p className="text-[10px] font-mono text-[var(--muted)] uppercase tracking-wider mb-3">
-          All Training Domains
+          All Shell Domains
         </p>
 
         <div className="space-y-3 mb-8">
@@ -235,7 +235,7 @@ function DomainSelect({
           className="p-4 border text-xs font-mono text-[var(--muted)]"
           style={{ borderColor: "var(--card-border)" }}
         >
-          🔒 Training sessions use the x402 payment protocol. Payments: 70% to sensei · 30% to platform.
+          🔒 Shell sessions use the x402 payment protocol. Payments: 70% to provider · 30% to platform.
         </div>
       </div>
     </div>
@@ -313,8 +313,8 @@ function PaymentGate({
             <div className="flex items-center gap-3 mb-2">
               <span className="text-2xl">{domain.emoji}</span>
               <div>
-                <div className="font-bold">{domain.label} Training</div>
-                <div className="text-xs text-[var(--muted)]">Sensei: {domain.sensei}</div>
+                <div className="font-bold">{domain.label} Shell</div>
+                <div className="text-xs text-[var(--muted)]">Provider: {domain.sensei}</div>
               </div>
             </div>
             <p className="text-xs text-[var(--muted)]">{domain.description}</p>
@@ -339,7 +339,7 @@ function PaymentGate({
               ${domain.priceUSDC} USDC
             </div>
             <div className="text-xs text-[var(--muted)] mb-4">
-              Unlocks one training session on Base Sepolia
+              Unlocks one shell session on Base Sepolia
             </div>
 
             {/* Revenue split */}
@@ -351,7 +351,7 @@ function PaymentGate({
                 <div className="text-sm font-bold" style={{ color: domain.color }}>
                   ${senseiFee}
                 </div>
-                <div className="text-xs text-[var(--muted)] font-mono">70% → Sensei</div>
+                <div className="text-xs text-[var(--muted)] font-mono">70% → Provider</div>
               </div>
               <div className="text-center">
                 <div className="text-sm font-bold text-[var(--muted)]">${platformFee}</div>
@@ -384,7 +384,7 @@ function PaymentGate({
               className="w-full py-3 font-mono text-sm font-bold transition-opacity hover:opacity-80 disabled:opacity-50"
               style={{ backgroundColor: domain.color, color: "#000" }}
             >
-              {paying ? "Processing..." : `PAY ${domain.priceUSDC} USDC → UNLOCK TRAINING`}
+              {paying ? "Processing..." : `PAY ${domain.priceUSDC} USDC → EQUIP SHELL`}
             </button>
 
             <button
@@ -535,10 +535,10 @@ function TrainingSession({
         <div className="flex items-center gap-3">
           <span className="text-sm">{domain.emoji}</span>
           <span className="text-xs font-mono" style={{ color: domain.color }}>
-            {domain.label} Training
+            {domain.label} Shell
           </span>
           <span className="text-xs font-mono text-[var(--muted)]">
-            with {domain.sensei}
+            via {domain.sensei}
           </span>
         </div>
         <div className="flex items-center gap-4">
@@ -699,9 +699,9 @@ function SessionComplete({
         <div className="max-w-lg w-full">
           <div className="text-center mb-8">
             <div className="text-4xl mb-4">{domain.emoji}</div>
-            <h1 className="text-2xl font-bold mb-2">Training Complete!</h1>
+            <h1 className="text-2xl font-bold mb-2">Shell Equipped!</h1>
             <p className="text-[var(--muted)] text-sm">
-              You completed a {domain.label} training session with {domain.sensei}
+              You equipped the {domain.label} shell via {domain.sensei}
             </p>
           </div>
 
@@ -751,10 +751,10 @@ function SessionComplete({
             style={{ borderColor: domain.color + "40", backgroundColor: domain.color + "08" }}
           >
             <div className="text-xs font-mono text-[var(--muted)] mb-1">NEXT STEP</div>
-            <h3 className="font-bold mb-2">Reassess to track your improvement</h3>
+            <h3 className="font-bold mb-2">Reassess to verify your new capability</h3>
             <p className="text-xs text-[var(--muted)] mb-4">
-              You just trained {domain.label}. Run the full assessment to see if your score improved.
-              Score history is tracked per domain.
+              You just equipped {domain.label}. Run the assessment to verify your shell works.
+              Trust scores are tracked per domain.
             </p>
             <button
               onClick={onReassess}
@@ -771,7 +771,7 @@ function SessionComplete({
               className="flex-1 py-3 font-mono text-sm border transition-opacity hover:opacity-80"
               style={{ borderColor: "var(--card-border)", color: "var(--muted)" }}
             >
-              Train Another Domain
+              Equip Another Shell
             </button>
             <a
               href="/dashboard"

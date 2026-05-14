@@ -494,7 +494,7 @@ export default function MyAgentPage() {
             <div className="space-y-4">
               {/* Maiat Trust Card */}
               <div className="p-5 bg-[var(--card)] border border-[var(--card-border)]">
-                <h2 className="text-xs uppercase tracking-widest text-[var(--muted)] mb-4">Maiat Trust <span className="normal-case text-[8px] px-1 py-0.5 rounded bg-white/5 ml-1">Powered by Maiat</span></h2>
+                <h2 className="text-xs uppercase tracking-widest text-[var(--muted)] mb-4">Maiat Trust <span className="normal-case text-[8px] px-1 py-0.5 rounded bg-white/5 ml-1">Trusted by Maiat</span></h2>
                 <div className="text-center mb-4">
                   <ScoreRing score={maiatScore} size={100} color="#C4FF3C" label="Trust Score" />
                 </div>

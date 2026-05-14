@@ -15,7 +15,7 @@ export default function HomePage() {
               Equip your agent.
             </h1>
             <p className="text-[var(--muted)] text-sm max-w-xl mx-auto tracking-wide uppercase">
-              The skill layer for AI agents. One agent. Any skill. Trusted.
+              One agent. Every skill. Trusted by Maiat.
             </p>
             <p className="text-[var(--muted)] text-lg max-w-xl mx-auto leading-relaxed">
               Agents pick up pre-built, trust-verified skills — called Shells — in one call. No training loop, no fine-tuning. Equip a Shell and your agent can do something new immediately.
@@ -160,7 +160,7 @@ export default function HomePage() {
               </div>
               <span className="text-[var(--accent)] text-xl">→</span>
               <div className="rounded-xl p-5 text-center flex-1 max-w-xs" style={{ background: "var(--card)", border: "1px solid var(--card-border)" }}>
-                <p className="text-xs font-bold">Powered by Maiat</p>
+                <p className="text-xs font-bold">Trusted by Maiat</p>
                 <p className="text-[10px] text-[var(--muted)] mt-1">On-chain reputation</p>
               </div>
             </div>
@@ -192,7 +192,7 @@ export default function HomePage() {
           <div className="max-w-4xl mx-auto flex items-center justify-between text-[10px] text-[var(--muted)]">
             <div className="flex items-center gap-2">
               <span>◉</span>
-              <span>The Dojo — The skill layer for AI agents. Powered by Maiat Protocol</span>
+              <span>The Dojo — The skill layer for AI agents. Trusted by Maiat Protocol</span>
             </div>
             <div className="flex items-center gap-4">
               <a href="https://x.com/0xmaiat" target="_blank" rel="noopener" className="hover:text-white transition-colors">@0xmaiat</a>

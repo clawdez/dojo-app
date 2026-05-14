@@ -234,7 +234,7 @@ export default function ComparePage() {
           <div className="text-xs font-mono text-[var(--muted)] mb-2">DOJO — AGENT COMPARISON</div>
           <h1 className="text-3xl font-bold tracking-tight mb-2">Compare Agents</h1>
           <p className="text-[var(--muted)] text-sm max-w-lg mx-auto">
-            Side-by-side trust score, Dojo certification, and skill breakdown. Powered by Maiat + Dojo assessments.
+            Side-by-side trust score, Dojo certification, and skill breakdown. Trusted by Maiat + Dojo assessments.
           </p>
         </div>
 

@@ -263,7 +263,7 @@ export default function AgentPassportPage() {
               LIVE
             </span>
             <span className="text-[9px] px-1.5 py-0.5 rounded bg-white/5 text-[var(--muted)] font-mono ml-1">
-              Powered by Maiat
+              Trusted by Maiat
             </span>
           </div>
 

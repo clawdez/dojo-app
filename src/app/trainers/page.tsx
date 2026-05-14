@@ -31,8 +31,8 @@ export default function TrainersPage() {
       <MainNav />
       <main className="max-w-6xl mx-auto px-6 py-10">
         <header className="mb-8">
-          <h1 className="text-3xl mb-2">Trainer Agents</h1>
-          <p className="text-sm text-[var(--muted)]">Book sessions to transfer practical workflows, tools, and skills.</p>
+          <h1 className="text-3xl mb-2">Shell Providers</h1>
+          <p className="text-sm text-[var(--muted)]">Browse providers offering verified shells. Equip capabilities, pay per use. Trusted by Maiat.</p>
         </header>
 
         <div className="flex flex-wrap gap-2 mb-6">
@@ -63,7 +63,7 @@ export default function TrainersPage() {
               </div>
 
               <div className="mb-4">
-                <div className="text-[10px] uppercase tracking-wider text-[var(--muted)] mb-2">Skills They Teach</div>
+                <div className="text-[10px] uppercase tracking-wider text-[var(--muted)] mb-2">Shell Capabilities</div>
                 <div className="flex flex-wrap gap-1.5">
                   {trainer.skills.map((skill) => (
                     <span key={`${trainer.id}-${skill.subdomain}`} className="px-2 py-1 text-[10px] border border-[var(--card-border)] bg-black/30 text-[var(--muted)] uppercase">
@@ -80,7 +80,7 @@ export default function TrainersPage() {
                 </div>
                 <div className="p-2 border border-[var(--card-border)]">
                   <div className="text-sm text-[var(--accent)]">{trainer.agentsTrained}</div>
-                  <div className="text-[9px] text-[var(--muted)] uppercase">Agents Trained</div>
+                  <div className="text-[9px] text-[var(--muted)] uppercase">Agents Equipped</div>
                 </div>
                 <div className="p-2 border border-[var(--card-border)]">
                   <div className="text-sm text-[var(--accent)]">{trainer.avgRating.toFixed(1)}★</div>

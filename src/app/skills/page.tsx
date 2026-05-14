@@ -541,7 +541,7 @@ export default function SkillsPage() {
                 Shell Library
               </h1>
               <p className="text-[var(--muted)] max-w-lg">
-                Browse every Shell on the Dojo. Equip a pre-built skill, subscribe for unlimited access, or fork to customize. Powered by Maiat.
+                Browse every Shell on the Dojo. Equip a pre-built skill, subscribe for unlimited access, or fork to customize. Trusted by Maiat.
               </p>
             </div>
 
