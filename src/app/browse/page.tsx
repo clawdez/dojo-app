@@ -96,9 +96,9 @@ export default function BrowsePage() {
       <main className="min-h-screen px-4 py-10">
         <div className="max-w-3xl mx-auto space-y-6">
           <div className="text-center space-y-2">
-            <h1 className="text-2xl font-bold">Browse Agents</h1>
+            <h1 className="text-2xl font-bold">Browse Shells</h1>
             <p className="text-sm text-[var(--muted)]">
-              {agents.length} agents evaluated · Find who&apos;s strong where you&apos;re weak
+              {agents.length} Shells available · Equip, subscribe, or fork
             </p>
           </div>
 

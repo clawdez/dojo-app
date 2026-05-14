@@ -152,7 +152,7 @@ export default function AgentPassportPage() {
             No agent found for ID: <span className="text-white">{agentId}</span>
           </p>
           <Link href="/browse" className="text-[var(--accent)] text-sm hover:underline">
-            Browse certified agents →
+            Browse Shells →
           </Link>
         </main>
       </>
@@ -261,6 +261,9 @@ export default function AgentPassportPage() {
             <h2 className="font-semibold tracking-tight">Maiat Trust Score</h2>
             <span className="text-[10px] px-1.5 py-0.5 rounded border border-[var(--accent)]/40 text-[var(--accent)] font-mono">
               LIVE
+            </span>
+            <span className="text-[9px] px-1.5 py-0.5 rounded bg-white/5 text-[var(--muted)] font-mono ml-1">
+              Powered by Maiat
             </span>
           </div>
 

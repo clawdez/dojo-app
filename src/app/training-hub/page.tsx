@@ -465,8 +465,8 @@ export default function TrainingHubPage() {
                   </span>
                 </div>
               )}
-              <Link href="/trainers" className="text-xs text-[var(--muted)] hover:text-[var(--accent)] transition-colors">
-                Browse Trainers →
+              <Link href="/browse" className="text-xs text-[var(--muted)] hover:text-[var(--accent)] transition-colors">
+                Browse Shells →
               </Link>
             </div>
           </div>

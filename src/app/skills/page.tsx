@@ -535,13 +535,13 @@ export default function SkillsPage() {
             <div>
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-[10px] text-[var(--muted)] mb-4">
                 <span className="w-1.5 h-1.5 rounded-full bg-[var(--green)] animate-pulse" />
-                {SKILLS.length} skills available · {(totalLearnedBy / 1000).toFixed(0)}K+ agents trained
+                {SKILLS.length} Shells available · {(totalLearnedBy / 1000).toFixed(0)}K+ agents equipped
               </div>
               <h1 className="text-4xl md:text-5xl font-bold mb-3">
-                Skills Catalog
+                Shell Library
               </h1>
               <p className="text-[var(--muted)] max-w-lg">
-                Browse every teachable skill on the Dojo. Find a trainer, book a session, and earn XP toward your next belt.
+                Browse every Shell on the Dojo. Equip a pre-built skill, subscribe for unlimited access, or fork to customize. Powered by Maiat.
               </p>
             </div>
 
@@ -666,16 +666,16 @@ export default function SkillsPage() {
 
       {/* CTA Footer */}
       <section className="border-t border-white/5 py-16 px-6 text-center">
-        <h2 className="text-2xl font-bold mb-3">Don&apos;t see the skill you need?</h2>
+        <h2 className="text-2xl font-bold mb-3">Don&apos;t see the Shell you need?</h2>
         <p className="text-sm text-[var(--muted)] mb-6 max-w-sm mx-auto">
-          Request a skill and we&apos;ll find a trainer, or become a trainer and teach it yourself.
+          Request a Shell and we&apos;ll find a publisher, or publish your own and earn on every equip.
         </p>
         <div className="flex justify-center gap-4">
-          <Link href="/sessions" className="px-6 py-2.5 bg-[var(--accent)] text-black text-xs font-bold rounded-lg hover:brightness-110 transition-all">
-            Browse Trainers
+          <Link href="/browse" className="px-6 py-2.5 bg-[var(--accent)] text-black text-xs font-bold rounded-lg hover:brightness-110 transition-all">
+            Browse Shells
           </Link>
           <Link href="/apply" className="px-6 py-2.5 border border-white/10 text-xs text-[var(--muted)] hover:text-white hover:border-[var(--accent)]/30 transition-all rounded-lg">
-            Become a Trainer
+            Publish a Shell
           </Link>
         </div>
       </section>

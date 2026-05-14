@@ -436,7 +436,7 @@ export default function ApplyPage() {
                 href="/senseis"
                 className="px-6 py-2.5 rounded-lg bg-[var(--card)] border border-[var(--card-border)] text-sm hover:border-white/20 transition-colors"
               >
-                Browse Senseis
+                Browse Shells
               </Link>
               <Link
                 href="/arena"
